@@ -135,8 +135,11 @@
     .status{font-size:.76rem;padding:8px 9px}
     .row{grid-template-columns:1fr}
   }
+  .reset-short{display:none}
   @media(max-width:450px){
     .hide-phone{display:none}
+    .reset-long{display:none}
+    .reset-short{display:inline}
     .toolbar button{font-size:.75rem}
   }
 </style>
@@ -159,7 +162,7 @@
     <button id="shuffleBtn" class="soft">🔀 Mescola</button>
     <button id="extractBtn" class="primary">🎲 Estrai</button>
     <label title="Se attivo, ogni banco viene estratto una sola volta"><input id="noRepeat" type="checkbox" checked> senza rip.</label>
-    <button id="resetDrawBtn" class="hide-phone">↺ Azzera estr.</button>
+    <button id="resetDrawBtn" title="Azzera tutte le estrazioni e ricomincia da capo" aria-label="Azzera estrazioni">↺ <span class="reset-long">Azzera estr.</span><span class="reset-short">Reset</span></button>
     <span class="spacer"></span>
     <button id="rotateBtn" title="Ruota il banco o la cattedra selezionata">↻ Ruota</button>
     <button id="lockBtn" title="Blocca o sblocca cattedra, porta, lavagna, monitor e davanzale">🔒 Struttura</button>
@@ -772,7 +775,7 @@
       if(flashes>=8){clearInterval(seq);const w=pool[Math.floor(Math.random()*pool.length)];state.current=w.id;if($('#noRepeat').checked&&!state.used.includes(w.id))state.used.push(w.id);state.selectedDesk=w.id;render();beep();toast(w.name?`Estratto: ${w.name}`:`Estratto: banco ${w.id}`);}
     },75);
   };
-  $('#resetDrawBtn').onclick=()=>{state.used=[];state.current=null;render();toast('Estrazioni azzerate')};
+  $('#resetDrawBtn').onclick=()=>{state.used=[];state.current=null;render();toast('Estrazioni azzerate · si riparte da capo')};
 
   $('#rotateBtn').onclick=()=>{
     const d=state.desks.find(x=>x.id===state.selectedDesk);
