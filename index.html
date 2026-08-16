@@ -71,7 +71,7 @@
   .modal-body{padding:16px;max-height:70vh;overflow:auto}
   .modal-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
   textarea{width:100%;min-height:220px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.45}
-  input[type=text],select{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.65rem .7rem}
+  input[type=text],input[type=number],select{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.65rem .7rem}
   .hint{color:var(--muted);font-size:.86rem;line-height:1.4;margin:.4rem 0 1rem}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .save-list{display:grid;gap:8px;margin-top:12px}
@@ -86,6 +86,11 @@
   .angle-grid button{min-height:48px;font-size:1rem}
   .angle-grid button.active-angle{background:var(--accent);border-color:var(--accent);color:#fff}
   .selected-banner{background:var(--accent2);padding:9px 10px;border-radius:10px;font-size:.9rem;margin-bottom:8px}
+  .desk-count-box{display:grid;grid-template-columns:auto 110px auto;gap:9px;align-items:center;justify-content:center;margin:14px 0}
+  .desk-count-box button{min-width:52px;font-size:1.25rem}
+  .desk-count-box input{text-align:center;font-size:1.2rem;font-weight:800}
+  .desk-count-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+  @media(max-width:520px){.desk-count-actions{grid-template-columns:1fr}}
   .help-intro{margin:.1rem 0 1rem;line-height:1.45;color:var(--muted)}
   .help-section{border-top:1px solid var(--line);padding:13px 0 2px}
   .help-section:first-of-type{border-top:0;padding-top:0}
@@ -139,7 +144,7 @@
 <body>
 <div class="app">
   <header>
-    <div class="brand"><h1>DISPOSIZIONE BANCHI</h1><small>Pianta dell’aula · 24 banchi</small></div>
+    <div class="brand"><h1>DISPOSIZIONE BANCHI</h1><small id="deskCountSubtitle">Pianta dell’aula · 24 banchi</small></div>
     <div class="top-actions">
       <button id="helpBtn" class="icon" title="Istruzioni" aria-label="Istruzioni">ⓘ</button>
       <button id="copyrightBtn" class="icon" title="Copyright e crediti" aria-label="Copyright e crediti">©</button>
@@ -149,6 +154,7 @@
   </header>
 
   <div class="toolbar">
+    <button id="deskCountBtn" class="soft" title="Aggiungi, rimuovi o imposta il numero di banchi">🪑 Banchi</button>
     <button id="studentsBtn">👥 Alunni</button>
     <button id="shuffleBtn" class="soft">🔀 Mescola</button>
     <button id="extractBtn" class="primary">🎲 Estrai</button>
@@ -206,6 +212,7 @@
         <li><strong>↻ Ruota</strong> → ruota di 90° il banco selezionato. Se hai sbloccato la struttura e selezioni la cattedra, puoi scegliere −45°, −30°, 0°, +30°, +45° o 90°.</li>
         <li><strong>🔒 Struttura / 🔓 Struttura</strong> → blocca o sblocca cattedra, porta, lavagna, monitor e davanzale. Quando è sbloccata puoi trascinare questi elementi.</li>
         <li><strong>↔ Doppia freccia rossa/blu</strong> → indica la <strong>zona della porta d’ingresso</strong>. Questa zona deve essere lasciata sgombra, senza banchi o altri elementi, per consentire il passaggio.</li>
+        <li><strong>🪑 Banchi</strong> → la pianta parte con 24 banchi, ma puoi aggiungerne o rimuoverne e impostare un totale da 1 a 30. I nuovi banchi compaiono in una zona libera della pianta, pronti per essere trascinati.</li>
         <li><strong>magnete</strong> → se attivo, aiuta ad allineare e accostare i banchi.</li>
       </ul>
     </div>
@@ -213,7 +220,7 @@
     <div class="help-section">
       <h3>Cognomi e assegnazioni</h3>
       <ul class="help-list">
-        <li><strong>👥 Alunni</strong> → incolla fino a 24 cognomi, uno per riga. Puoi assegnarli in ordine, distribuirli casualmente, assegnarne uno manualmente o scambiare due banchi.</li>
+        <li><strong>👥 Alunni</strong> → incolla fino al numero di banchi impostato, un cognome per riga. Puoi assegnarli in ordine, distribuirli casualmente, assegnarne uno manualmente o scambiare due banchi.</li>
         <li><strong>🔀 Mescola</strong> → rimescola solo i cognomi già assegnati, senza spostare i banchi.</li>
         <li><strong>Schermo orizzontale:</strong> la pianta si ridimensiona automaticamente per mostrare tutta l’aula. Se serve, puoi anche scorrere verticalmente trascinando una zona vuota della pianta.</li>
         <li><strong>Pressione lunga</strong> → è il modo più rapido per aggiungere, correggere o rimuovere il cognome di un singolo banco.</li>
@@ -265,10 +272,29 @@
   <div class="modal-foot"><button class="close primary">Chiudi</button></div>
 </dialog>
 
+<dialog id="deskCountDialog">
+  <div class="modal-head"><h2>Numero di banchi</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <p class="hint">La pianta standard contiene 24 banchi. Puoi adattarla alla situazione reale dell’aula, da <strong>1 a 30 banchi</strong>. Le disposizioni salvate ricordano il proprio numero di banchi.</p>
+    <div class="desk-count-box">
+      <button id="deskMinusBtn" aria-label="Diminuisci numero di banchi">−</button>
+      <input id="deskCountInput" type="number" inputmode="numeric" min="1" max="30" step="1" value="24" aria-label="Numero totale di banchi" />
+      <button id="deskPlusBtn" aria-label="Aumenta numero di banchi">+</button>
+    </div>
+    <button id="applyDeskCountBtn" class="primary" style="width:100%">Imposta questo numero</button>
+    <div class="desk-count-actions">
+      <button id="removeDeskBtn">➖ Rimuovi un banco</button>
+      <button id="addDeskBtn">➕ Aggiungi un banco</button>
+    </div>
+    <p id="deskCountNote" class="hint" style="margin-top:12px;margin-bottom:0"></p>
+  </div>
+  <div class="modal-foot"><button class="close">Chiudi</button></div>
+</dialog>
+
 <dialog id="studentsDialog">
   <div class="modal-head"><h2>Elenco alunni</h2><button class="icon close" aria-label="Chiudi">×</button></div>
   <div class="modal-body">
-    <p class="hint">Incolla fino a 24 cognomi, uno per riga. Puoi poi assegnarli in ordine, mescolarli oppure scegliere manualmente il cognome del banco selezionato.</p>
+    <p id="studentsLimitHint" class="hint">Incolla fino a 24 cognomi, uno per riga. Puoi poi assegnarli in ordine, mescolarli oppure scegliere manualmente il cognome del banco selezionato.</p>
     <textarea id="namesText" placeholder="Rossi\nBianchi\nFerrero\nEsposito\n..."></textarea>
     <div class="assignment-box">
       <h3>Assegnazione manuale</h3>
@@ -359,6 +385,7 @@
 (() => {
   const NS='http://www.w3.org/2000/svg';
   const BASE_W=990.6, BASE_H=685.8;
+  const MIN_DESKS=1, MAX_DESKS=30;
   const initialPairs=[
     [77.5,31.5],[399.8,31.5],[722.8,31.5],
     [400.8,154.4],[723.2,154.4],
@@ -390,7 +417,7 @@
 
   const $=s=>document.querySelector(s);
   const desksLayer=$('#desks'), structuresLayer=$('#structures'), svg=$('#classroom');
-  const studentsDialog=$('#studentsDialog'), teacherRotateDialog=$('#teacherRotateDialog'), saveDialog=$('#saveDialog'), loadDialog=$('#loadDialog'), exportDialog=$('#exportDialog'), quickNameDialog=$('#quickNameDialog'), helpDialog=$('#helpDialog'), copyrightDialog=$('#copyrightDialog');
+  const studentsDialog=$('#studentsDialog'), deskCountDialog=$('#deskCountDialog'), teacherRotateDialog=$('#teacherRotateDialog'), saveDialog=$('#saveDialog'), loadDialog=$('#loadDialog'), exportDialog=$('#exportDialog'), quickNameDialog=$('#quickNameDialog'), helpDialog=$('#helpDialog'), copyrightDialog=$('#copyrightDialog');
   const namesText=$('#namesText'), manualNameSelect=$('#manualNameSelect');
   let drag=null;
   let longPressTimer=null;
@@ -399,7 +426,7 @@
   function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
   function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),1900)}
   function parseNames(){
-    return namesText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,24);
+    return namesText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,state.desks.length);
   }
   function shuffle(arr){
     const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
@@ -457,7 +484,7 @@
   function loadAuto(){
     try{
       const a=JSON.parse(localStorage.getItem('desk-autosave'));
-      if(a?.desks?.length===24){state.desks=a.desks;state.structures=a.structures||structuredClone(initialStructures);state.names=a.names||[];state.structureLocked=a.structureLocked??true;}
+      if(Array.isArray(a?.desks) && a.desks.length>=MIN_DESKS && a.desks.length<=MAX_DESKS){state.desks=a.desks;state.structures=a.structures||structuredClone(initialStructures);state.names=(a.names||[]).slice(0,a.desks.length);state.structureLocked=a.structureLocked??true;}
     }catch(e){}
   }
 
@@ -508,8 +535,11 @@
     $('#selectionText').textContent=selected?`Banco ${selected.id}${selected.name?' · '+selected.name:''}`:structureLabel;
     $('#selectedBanner').textContent=selected?`Banco selezionato: ${selected.id}${selected.name?' · '+selected.name:''}`:'Seleziona prima un banco sulla pianta.';
     const assigned=state.desks.filter(d=>d.name).length;
-    $('#statusLeft').innerHTML=`<strong>24</strong> banchi · <strong>${assigned}</strong> cognomi`;
-    $('#statusRight').textContent=`${state.used.length}/24 estratti`;
+    const deskCount=state.desks.length;
+    $('#deskCountSubtitle').textContent=`Pianta dell’aula · ${deskCount} ${deskCount===1?'banco':'banchi'}`;
+    $('#statusLeft').innerHTML=`<strong>${deskCount}</strong> ${deskCount===1?'banco':'banchi'} · <strong>${assigned}</strong> cognomi`;
+    $('#statusRight').textContent=`${state.used.length}/${deskCount} estratti`;
+    $('#studentsLimitHint').innerHTML=`Incolla fino a <strong>${deskCount}</strong> ${deskCount===1?'cognome':'cognomi'}, uno per riga. Puoi poi assegnarli in ordine, mescolarli oppure scegliere manualmente il cognome del banco selezionato.`;
     updateManualSelect();
   }
 
@@ -553,8 +583,8 @@
         else roster.splice(idx,1);
       }
     }
-    if(neu && !roster.includes(neu) && roster.length<24) roster.push(neu);
-    state.names=roster.slice(0,24);
+    if(neu && !roster.includes(neu) && roster.length<state.desks.length) roster.push(neu);
+    state.names=roster.slice(0,state.desks.length);
   }
 
   function dragStart(evt,type,id){
@@ -608,12 +638,91 @@
   }
 
 
+  function extraDeskPosition(index){
+    const slots=[
+      [285,35],[605,35],
+      [285,155],[605,155],
+      [285,278],[605,278]
+    ];
+    const slot=slots[index%slots.length];
+    const cycle=Math.floor(index/slots.length);
+    return {x:slot[0]+cycle*10,y:slot[1]+cycle*10};
+  }
+  function makeDesk(id){
+    const p=extraDeskPosition(Math.max(0,id-25));
+    return {id,x:p.x,y:p.y,w:90,h:72,name:'',rot:0};
+  }
+  function normalizeDeskIds(){
+    state.desks.forEach((d,i)=>d.id=i+1);
+    state.used=state.used.filter(id=>id>=1 && id<=state.desks.length);
+    if(state.current && state.current>state.desks.length)state.current=null;
+    if(state.selectedDesk && state.selectedDesk>state.desks.length)state.selectedDesk=null;
+    if(state.swapFirst && state.swapFirst>state.desks.length)state.swapFirst=null;
+  }
+  function trimRosterToDesks(){
+    const assignedNames=state.desks.map(d=>d.name).filter(Boolean);
+    const keep=[];
+    for(const n of [...state.names,...assignedNames]){
+      if(n && !keep.includes(n) && keep.length<state.desks.length)keep.push(n);
+    }
+    state.names=keep.slice(0,state.desks.length);
+  }
+  function setDeskCount(target,{confirmRemoval=true}={}){
+    target=Math.round(Number(target));
+    if(!Number.isFinite(target))target=state.desks.length;
+    target=Math.max(MIN_DESKS,Math.min(MAX_DESKS,target));
+    const current=state.desks.length;
+    if(target===current){toast(`La pianta ha già ${current} ${current===1?'banco':'banchi'}`);return true;}
+    if(target<current){
+      const removed=state.desks.slice(target);
+      const named=removed.filter(d=>d.name);
+      if(confirmRemoval && named.length){
+        const list=named.map(d=>`Banco ${d.id}: ${d.name}`).join('\n');
+        if(!confirm(`Riducendo a ${target} ${target===1?'banco':'banchi'} verranno eliminati questi posti assegnati:\n\n${list}\n\nContinuare?`))return false;
+      }
+      state.desks=state.desks.slice(0,target);
+    }else{
+      for(let id=current+1;id<=target;id++)state.desks.push(makeDesk(id));
+    }
+    normalizeDeskIds();
+    trimRosterToDesks();
+    state.used=[];state.current=null;state.swapMode=false;state.swapFirst=null;
+    namesText.value=state.names.join('\n');
+    saveAuto();render();
+    $('#deskCountInput').value=state.desks.length;
+    $('#deskCountNote').textContent=target>current?'Nuovi banchi aggiunti: trascinali nella posizione desiderata.':'Numero di banchi aggiornato.';
+    toast(`${state.desks.length} ${state.desks.length===1?'banco':'banchi'} in aula`);
+    return true;
+  }
+  function resetPositionsForCurrentCount(){
+    const count=state.desks.length;
+    const currentNames=state.desks.map(d=>d.name);
+    const desks=structuredClone(initialDesks.slice(0,Math.min(count,initialDesks.length)));
+    for(let id=initialDesks.length+1;id<=count;id++)desks.push(makeDesk(id));
+    desks.forEach((d,i)=>d.name=currentNames[i]||'');
+    state.desks=desks;
+    normalizeDeskIds();
+  }
+
+
   svg.addEventListener('pointerdown',e=>{
     const dg=e.target.closest('.desk'); if(dg)return dragStart(e,'desk',+dg.dataset.id);
     const sg=e.target.closest('.structure'); if(sg)return dragStart(e,'structure',sg.dataset.sid);
     state.selectedDesk=null;state.selectedStructure=null;render();
   });
   svg.addEventListener('pointermove',dragMove);window.addEventListener('pointerup',dragEnd);window.addEventListener('pointercancel',dragEnd);
+
+  $('#deskCountBtn').onclick=()=>{
+    $('#deskCountInput').value=state.desks.length;
+    $('#deskCountNote').textContent=`Attualmente: ${state.desks.length} ${state.desks.length===1?'banco':'banchi'}.`;
+    deskCountDialog.showModal();
+  };
+  $('#deskPlusBtn').onclick=()=>{const i=$('#deskCountInput');i.value=Math.min(MAX_DESKS,(Number(i.value)||state.desks.length)+1);};
+  $('#deskMinusBtn').onclick=()=>{const i=$('#deskCountInput');i.value=Math.max(MIN_DESKS,(Number(i.value)||state.desks.length)-1);};
+  $('#applyDeskCountBtn').onclick=()=>setDeskCount($('#deskCountInput').value);
+  $('#addDeskBtn').onclick=()=>{if(state.desks.length>=MAX_DESKS){toast(`Massimo ${MAX_DESKS} banchi`);return;}setDeskCount(state.desks.length+1);};
+  $('#removeDeskBtn').onclick=()=>{if(state.desks.length<=MIN_DESKS){toast('Deve restare almeno un banco');return;}setDeskCount(state.desks.length-1);};
+  $('#deskCountInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#applyDeskCountBtn').click();}});
 
   $('#helpBtn').onclick=()=>helpDialog.showModal();
   $('#copyrightBtn').onclick=()=>copyrightDialog.showModal();
@@ -941,18 +1050,17 @@
   $('#exportPdfBtn').onclick=exportPdf;
 
   $('#exportBtn').onclick=()=>{
-    const payload={format:'disposizione-banchi-v1',exportedAt:new Date().toISOString(),savedLayouts:getSaves(),current:{desks:state.desks,structures:state.structures,names:state.names,structureLocked:state.structureLocked}};
+    const payload={format:'disposizione-banchi-v2',exportedAt:new Date().toISOString(),savedLayouts:getSaves(),current:{desks:state.desks,structures:state.structures,names:state.names,structureLocked:state.structureLocked}};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='disposizione-banchi-backup.json';a.click();URL.revokeObjectURL(a.href);toast('Backup esportato');
   };
   $('#importBtn').onclick=()=>$('#importFile').click();
   $('#resetLayoutBtn').onclick=()=>{
-    if(!confirm('Ripristinare la pianta iniziale dell’aula? I cognomi verranno mantenuti, ma le posizioni torneranno al modello originale.'))return;
-    const currentNames=state.desks.map(d=>d.name);
-    state.desks=structuredClone(initialDesks);state.desks.forEach((d,i)=>d.name=currentNames[i]||'');
-    state.structures=structuredClone(initialStructures);state.structureLocked=true;state.used=[];state.current=null;state.selectedDesk=null;state.selectedStructure=null;saveAuto();render();loadDialog.close();toast('Aula iniziale ripristinata');
+    if(!confirm('Ripristinare le posizioni iniziali dell’aula? I cognomi e il numero attuale di banchi verranno mantenuti.'))return;
+    resetPositionsForCurrentCount();
+    state.structures=structuredClone(initialStructures);state.structureLocked=true;state.used=[];state.current=null;state.selectedDesk=null;state.selectedStructure=null;saveAuto();render();loadDialog.close();toast('Posizioni iniziali ripristinate');
   };
   $('#importFile').onchange=async e=>{
-    const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(j.savedLayouts)setSaves(j.savedLayouts);if(j.current?.desks?.length===24){state.desks=j.current.desks;state.structures=j.current.structures||structuredClone(initialStructures);state.names=j.current.names||[];state.structureLocked=j.current.structureLocked??true;saveAuto();render();}renderSaveList();toast('Backup importato');}catch(err){alert('Il file non sembra un backup valido.')}e.target.value='';
+    const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(j.savedLayouts)setSaves(j.savedLayouts);if(Array.isArray(j.current?.desks) && j.current.desks.length>=MIN_DESKS && j.current.desks.length<=MAX_DESKS){state.desks=j.current.desks;state.structures=j.current.structures||structuredClone(initialStructures);state.names=(j.current.names||[]).slice(0,j.current.desks.length);state.structureLocked=j.current.structureLocked??true;normalizeDeskIds();saveAuto();render();}renderSaveList();toast('Backup importato');}catch(err){alert('Il file non sembra un backup valido.')}e.target.value='';
   };
 
   $('#themeBtn').onclick=()=>{state.theme=state.theme==='day'?'night':'day';localStorage.setItem('desk-theme',state.theme);render()};
@@ -1026,7 +1134,7 @@
   document.addEventListener('webkitfullscreenchange',updateFullscreenButton);
 
   document.querySelectorAll('dialog .close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
-  [studentsDialog,saveDialog,loadDialog,teacherRotateDialog,exportDialog,quickNameDialog,helpDialog,copyrightDialog].forEach(d=>d.addEventListener('click',e=>{const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()}));
+  [studentsDialog,deskCountDialog,saveDialog,loadDialog,teacherRotateDialog,exportDialog,quickNameDialog,helpDialog,copyrightDialog].forEach(d=>d.addEventListener('click',e=>{const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()}));
 
   // Tap: seleziona. Trascinamento: sposta. Pressione lunga: aggiunge/modifica il cognome.
   window.addEventListener('resize',()=>requestAnimationFrame(updateStageFit));
