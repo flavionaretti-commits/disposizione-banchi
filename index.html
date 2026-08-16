@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f3efe6" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Banchi" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
+<title>Disposizione banchi</title>
+<style>
+  :root{
+    --bg:#f3efe6; --panel:#fffdf8; --ink:#17202a; --muted:#667085; --line:#d7d1c5;
+    --accent:#2f6f55; --accent2:#e8f2ed; --danger:#b42318; --desk:#fffdf7; --deskline:#16832b;
+    --winner:#ffd84d; --used:#ece9e2; --shadow:0 8px 28px rgba(25,30,35,.10);
+  }
+  body.night{
+    --bg:#111614; --panel:#1b211f; --ink:#f5f7f6; --muted:#aeb7b2; --line:#3a4540;
+    --accent:#6bc49a; --accent2:#24372f; --desk:#202925; --deskline:#63c977;
+    --winner:#d8a900; --used:#28302d; --shadow:0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  button,input,textarea,select{font:inherit}
+  button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:.62rem .8rem;font-weight:750;cursor:pointer}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.soft{background:var(--accent2);border-color:transparent;color:var(--ink)}
+  button.danger{color:var(--danger)}
+  button.icon{width:42px;height:42px;padding:0;display:grid;place-items:center;font-size:1.15rem}
+  .app{max-width:1500px;margin:auto;padding:12px clamp(8px,2vw,20px) 28px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .brand h1{font-size:clamp(1.15rem,2.2vw,1.8rem);line-height:1;margin:0;letter-spacing:.03em}
+  .brand small{display:block;color:var(--muted);margin-top:5px}
+  .top-actions{display:flex;gap:7px}
+  .toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:var(--shadow);margin-bottom:10px}
+  .toolbar .spacer{flex:1}
+  .toolbar label{display:flex;align-items:center;gap:5px;font-size:.84rem;color:var(--muted);padding:0 3px;white-space:nowrap}
+  .toolbar button{padding:.56rem .72rem}
+  .toolbar button.active{outline:3px solid color-mix(in srgb,var(--accent) 25%,transparent);border-color:var(--accent)}
+  .stage-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+  .stage-head{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:.88rem}
+  #stageWrap{width:100%;position:relative;background:white;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-overflow-scrolling:touch}
+  body.night #stageWrap{background:#e9eee9}
+  svg{display:block;width:100%;height:auto;aspect-ratio:990.6/685.8;touch-action:pan-y}
+  .desk,.structure{touch-action:none}
+  #stageWrap.landscape-fit{overflow:auto;overscroll-behavior:contain}
+  #stageWrap.landscape-fit svg{width:100%;height:100%;aspect-ratio:auto}
+  .desk{cursor:grab}
+  .desk.dragging{cursor:grabbing}
+  .desk rect.main{fill:var(--desk);stroke:var(--deskline);stroke-width:2}
+  .desk.selected rect.main{stroke:#2f64cf;stroke-width:4}
+  .desk.current rect.main{fill:var(--winner);stroke:#8b6500;stroke-width:5;filter:url(#glow)}
+  .desk.used:not(.current) rect.main{fill:var(--used)}
+  .desk text.num{font-size:10px;fill:#667085;font-weight:700;pointer-events:none}
+  body.night .desk text.num{fill:#c8d1cc}
+  .desk .surname{font-size:13px;line-height:1.05;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;height:100%;overflow:hidden;padding:5px;word-break:break-word;pointer-events:none}
+  .structure{cursor:grab}
+  .structure.locked{cursor:default}
+  .structure.selected{filter:url(#blueGlow)}
+  .status{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;color:var(--muted);font-size:.86rem;border-top:1px solid var(--line)}
+  .status strong{color:var(--ink)}
+  dialog{border:1px solid var(--line);border-radius:18px;padding:0;max-width:min(720px,94vw);width:100%;background:var(--panel);color:var(--ink);box-shadow:0 20px 80px rgba(0,0,0,.28)}
+  dialog::backdrop{background:rgba(0,0,0,.38);backdrop-filter:blur(2px)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .modal-head h2{font-size:1.1rem;margin:0}
+  .modal-body{padding:16px;max-height:70vh;overflow:auto}
+  .modal-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+  textarea{width:100%;min-height:220px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.45}
+  input[type=text],select{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.65rem .7rem}
+  .hint{color:var(--muted);font-size:.86rem;line-height:1.4;margin:.4rem 0 1rem}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .save-list{display:grid;gap:8px;margin-top:12px}
+  .save-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:12px}
+  .save-item .meta{min-width:0}
+  .save-item .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .save-item .meta small{color:var(--muted)}
+  .save-item .actions{display:flex;gap:6px;flex-shrink:0}
+  .assignment-box{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+  .assignment-box h3{font-size:1rem;margin:.2rem 0 .7rem}
+  .angle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+  .angle-grid button{min-height:48px;font-size:1rem}
+  .angle-grid button.active-angle{background:var(--accent);border-color:var(--accent);color:#fff}
+  .selected-banner{background:var(--accent2);padding:9px 10px;border-radius:10px;font-size:.9rem;margin-bottom:8px}
+  .help-intro{margin:.1rem 0 1rem;line-height:1.45;color:var(--muted)}
+  .help-section{border-top:1px solid var(--line);padding:13px 0 2px}
+  .help-section:first-of-type{border-top:0;padding-top:0}
+  .help-section h3{font-size:1rem;margin:0 0 8px;color:var(--ink)}
+  .help-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+  .help-list li{line-height:1.42;color:var(--muted)}
+  .help-list strong{color:var(--ink)}
+  .help-key{display:inline-block;min-width:1.8em;padding:.12rem .35rem;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-weight:800;text-align:center}
+  .credits{padding:16px 4px 0;text-align:center;color:var(--muted);font-size:.78rem}
+  .privacy{font-weight:700;color:var(--accent)}
+  .toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;background:#111;color:#fff;padding:10px 14px;border-radius:999px;font-weight:700;font-size:.88rem;transition:.2s;z-index:20;pointer-events:none;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* Fallback "tutto schermo" per iPad/iPhone e browser che non espongono la Fullscreen API. */
+  body.pseudo-fullscreen{overflow:hidden}
+  body.pseudo-fullscreen .app{
+    position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100dvh;overflow:auto;
+    background:var(--bg);padding-top:max(8px,env(safe-area-inset-top));
+    padding-bottom:max(8px,env(safe-area-inset-bottom));
+  }
+  /* In orizzontale la pianta si adatta all'altezza disponibile invece di essere tagliata. */
+  @media(orientation:landscape) and (max-height:900px){
+    .app{padding-top:6px;padding-bottom:8px}
+    header{margin-bottom:5px}
+    .brand small{display:none}
+    .toolbar{margin-bottom:5px;padding:5px;gap:4px}
+    .toolbar button{padding:.45rem .58rem;font-size:.79rem}
+    .toolbar label{font-size:.75rem}
+    .stage-head{padding:5px 9px}
+    .status{padding:5px 9px}
+    .credits{display:none}
+  }
+  @media(max-width:760px){
+    .app{padding-left:6px;padding-right:6px}
+    header{padding:0 4px}
+    .brand small{display:none}
+    .toolbar{border-radius:13px;gap:5px;padding:6px}
+    .toolbar button{font-size:.79rem;padding:.5rem .58rem;border-radius:10px}
+    .toolbar label{font-size:.75rem}
+    .toolbar .spacer{display:none}
+    .stage-card{border-radius:13px}
+    .stage-head{font-size:.76rem;padding:7px 9px}
+    .status{font-size:.76rem;padding:8px 9px}
+    .row{grid-template-columns:1fr}
+  }
+  @media(max-width:450px){
+    .hide-phone{display:none}
+    .toolbar button{font-size:.75rem}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>DISPOSIZIONE BANCHI</h1><small>Pianta dell’aula · 24 banchi</small></div>
+    <div class="top-actions">
+      <button id="helpBtn" class="icon" title="Istruzioni" aria-label="Istruzioni">ⓘ</button>
+      <button id="copyrightBtn" class="icon" title="Copyright e crediti" aria-label="Copyright e crediti">©</button>
+      <button id="fullscreenBtn" class="icon" title="Schermo intero">⛶</button>
+      <button id="themeBtn" class="icon" title="Giorno / notte">☾</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button id="studentsBtn">👥 Alunni</button>
+    <button id="shuffleBtn" class="soft">🔀 Mescola</button>
+    <button id="extractBtn" class="primary">🎲 Estrai</button>
+    <label title="Se attivo, ogni banco viene estratto una sola volta"><input id="noRepeat" type="checkbox" checked> senza rip.</label>
+    <button id="resetDrawBtn" class="hide-phone">↺ Azzera estr.</button>
+    <span class="spacer"></span>
+    <button id="rotateBtn" title="Ruota il banco o la cattedra selezionata">↻ Ruota</button>
+    <button id="lockBtn" title="Blocca o sblocca cattedra, porta, lavagna, monitor e davanzale">🔒 Struttura</button>
+    <label title="Allinea automaticamente i banchi quando li avvicini"><input id="snapToggle" type="checkbox" checked> magnete</label>
+    <button id="saveBtn">💾 Salva</button>
+    <button id="loadBtn">📂 Carica</button>
+    <button id="exportOpenBtn" class="soft" title="Esporta la pianta in PNG o PDF">🖼 Esporta</button>
+  </div>
+
+  <section class="stage-card">
+    <div class="stage-head">
+      <span><strong id="selectionText">Nessun banco selezionato</strong></span>
+      <span>Trascina con mouse o dito</span>
+    </div>
+    <div id="stageWrap">
+      <svg id="classroom" viewBox="0 0 990.6 685.8" aria-label="Pianta interattiva dell'aula">
+        <defs>
+          <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#ffbd00" flood-opacity=".9"/>
+          </filter>
+          <filter id="blueGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#2f64cf" flood-opacity=".65"/>
+          </filter>
+          <linearGradient id="redArrow" x1="0" x2="1"><stop stop-color="#ff1e2d"/><stop offset="1" stop-color="#ff6f6f"/></linearGradient>
+          <linearGradient id="blueArrow" x1="0" x2="1"><stop stop-color="#63b8ff"/><stop offset="1" stop-color="#1579d1"/></linearGradient>
+        </defs>
+        <g id="structures"></g>
+        <g id="desks"></g>
+      </svg>
+    </div>
+    <div class="status">
+      <span id="statusLeft"><strong>24</strong> banchi · <strong>0</strong> cognomi</span>
+      <span id="statusRight">0/24 estratti</span>
+    </div>
+  </section>
+  <div class="credits"><span class="privacy">🔒 Tutto resta nel browser</span> · © 2026 prof. Flavio Naretti · Plesso Maritano</div>
+</div>
+
+<dialog id="helpDialog">
+  <div class="modal-head"><h2>Istruzioni</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <p class="help-intro">Usa la pianta come una vera aula: trascina i banchi con il dito o con il mouse, assegna i cognomi e salva tutte le disposizioni che vuoi.</p>
+
+    <div class="help-section">
+      <h3>Uso della pianta</h3>
+      <ul class="help-list">
+        <li><strong>Tap su un banco</strong> → lo seleziona.</li>
+        <li><strong>Trascina un banco</strong> → lo sposta liberamente nell’aula.</li>
+        <li><strong>Pressione lunga su un banco</strong> → apre direttamente <em>Aggiungi/modifica cognome</em>.</li>
+        <li><strong>↻ Ruota</strong> → ruota di 90° il banco selezionato. Se hai sbloccato la struttura e selezioni la cattedra, puoi scegliere −45°, −30°, 0°, +30°, +45° o 90°.</li>
+        <li><strong>🔒 Struttura / 🔓 Struttura</strong> → blocca o sblocca cattedra, porta, lavagna, monitor e davanzale. Quando è sbloccata puoi trascinare questi elementi.</li>
+        <li><strong>↔ Doppia freccia rossa/blu</strong> → indica la <strong>zona della porta d’ingresso</strong>. Questa zona deve essere lasciata sgombra, senza banchi o altri elementi, per consentire il passaggio.</li>
+        <li><strong>magnete</strong> → se attivo, aiuta ad allineare e accostare i banchi.</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>Cognomi e assegnazioni</h3>
+      <ul class="help-list">
+        <li><strong>👥 Alunni</strong> → incolla fino a 24 cognomi, uno per riga. Puoi assegnarli in ordine, distribuirli casualmente, assegnarne uno manualmente o scambiare due banchi.</li>
+        <li><strong>🔀 Mescola</strong> → rimescola solo i cognomi già assegnati, senza spostare i banchi.</li>
+        <li><strong>Schermo orizzontale:</strong> la pianta si ridimensiona automaticamente per mostrare tutta l’aula. Se serve, puoi anche scorrere verticalmente trascinando una zona vuota della pianta.</li>
+        <li><strong>Pressione lunga</strong> → è il modo più rapido per aggiungere, correggere o rimuovere il cognome di un singolo banco.</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>Estrazione casuale</h3>
+      <ul class="help-list">
+        <li><strong>🎲 Estrai</strong> → sceglie casualmente un banco/alunno e lo evidenzia.</li>
+        <li><strong>senza rip.</strong> → se selezionato, un banco già estratto non può uscire di nuovo finché non azzeri le estrazioni.</li>
+        <li><strong>↺ Azzera estr.</strong> → rende nuovamente estraibili tutti i banchi.</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>Salvataggio e condivisione</h3>
+      <ul class="help-list">
+        <li><strong>💾 Salva</strong> → salva sul dispositivo la disposizione corrente con un nome, per esempio <em>2A – verifica</em>.</li>
+        <li><strong>📂 Carica</strong> → riapre una disposizione salvata. Da qui puoi anche esportare/importare il backup JSON o ripristinare la pianta iniziale.</li>
+        <li><strong>🖼 Esporta</strong> → crea un PNG semplice, un PNG con titolo oppure un PDF orizzontale pronto per la stampa.</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>Visualizzazione</h3>
+      <ul class="help-list">
+        <li><strong>ⓘ</strong> → apre queste istruzioni.</li>
+        <li><strong>©</strong> → apre copyright e crediti dell’app.</li>
+        <li><strong>⛶</strong> → attiva/disattiva la visualizzazione a tutto schermo.</li>
+        <li><strong>☾ / ☀</strong> → passa dalla modalità giorno alla modalità notte.</li>
+      </ul>
+    </div>
+
+    <p class="hint" style="margin-top:16px"><strong>Privacy:</strong> cognomi, disposizioni e salvataggi restano nel browser del dispositivo. L’app non invia l’elenco degli alunni online.</p>
+  </div>
+  <div class="modal-foot"><button class="close primary">Ho capito</button></div>
+</dialog>
+
+<dialog id="copyrightDialog">
+  <div class="modal-head"><h2>© Copyright e crediti</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <p style="font-size:1.05rem;line-height:1.55;margin-top:0"><strong>DISPOSIZIONE BANCHI</strong> è stata ideata e sviluppata dal <strong>prof. Flavio Naretti</strong>, referente del <strong>plesso Maritano</strong>.</p>
+    <p style="line-height:1.55">L’app è pensata per l’<strong>uso interno dei colleghi del plesso Maritano</strong>: uno strumento pratico per organizzare la disposizione dei banchi, assegnare gli alunni e gestire rapidamente la pianta dell’aula.</p>
+    <p style="line-height:1.55">Insomma, dedicata a tutti i colleghi <strong>Maritanini</strong> 🙂</p>
+    <p class="hint" style="margin-top:18px"><strong>© 2026 Flavio Naretti.</strong> I dati inseriti nell’app restano nel browser del dispositivo.</p>
+    <p class="hint">Software distribuito secondo la <strong>GNU GPL v3.0</strong>. I contenuti testuali e grafici sono disciplinati separatamente dal file <strong>LICENSE-CONTENUTI.md</strong> della repository.</p>
+  </div>
+  <div class="modal-foot"><button class="close primary">Chiudi</button></div>
+</dialog>
+
+<dialog id="studentsDialog">
+  <div class="modal-head"><h2>Elenco alunni</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <p class="hint">Incolla fino a 24 cognomi, uno per riga. Puoi poi assegnarli in ordine, mescolarli oppure scegliere manualmente il cognome del banco selezionato.</p>
+    <textarea id="namesText" placeholder="Rossi\nBianchi\nFerrero\nEsposito\n..."></textarea>
+    <div class="assignment-box">
+      <h3>Assegnazione manuale</h3>
+      <div id="selectedBanner" class="selected-banner">Seleziona prima un banco sulla pianta.</div>
+      <select id="manualNameSelect"><option value="">— Nessun cognome —</option></select>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button id="manualAssignBtn">Assegna al banco selezionato</button>
+        <button id="swapModeBtn">⇄ Scambia due banchi</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button id="clearNamesBtn" class="danger">Cancella assegnazioni</button>
+    <button id="assignSequentialBtn">Assegna in ordine</button>
+    <button id="assignRandomBtn" class="primary">Mescola e assegna</button>
+  </div>
+</dialog>
+
+<dialog id="teacherRotateDialog">
+  <div class="modal-head"><h2>Ruota cattedra</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <p class="hint">Scegli l'inclinazione della cattedra rispetto all'orizzontale. Sono disponibili anche le inclinazioni di 30° e 45° in entrambe le direzioni.</p>
+    <div class="angle-grid">
+      <button data-teacher-angle="-45">−45°</button>
+      <button data-teacher-angle="-30">−30°</button>
+      <button data-teacher-angle="0">0°</button>
+      <button data-teacher-angle="30">+30°</button>
+      <button data-teacher-angle="45">+45°</button>
+      <button data-teacher-angle="90">90°</button>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="close">Chiudi</button></div>
+</dialog>
+
+<dialog id="saveDialog">
+  <div class="modal-head"><h2>Salva disposizione</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <label>Nome della disposizione</label>
+    <input id="saveName" type="text" placeholder="es. 2A – disposizione normale" />
+    <p class="hint">Vengono salvati posizione dei banchi, struttura, cognomi e assegnazioni.</p>
+  </div>
+  <div class="modal-foot"><button id="confirmSave" class="primary">Salva nel dispositivo</button></div>
+</dialog>
+
+<dialog id="loadDialog">
+  <div class="modal-head"><h2>Disposizioni salvate</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <div id="saveList" class="save-list"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <div class="row">
+      <button id="exportBtn">⬇ Esporta backup JSON</button>
+      <button id="importBtn">⬆ Importa backup JSON</button>
+    </div>
+    <div style="margin-top:10px"><button id="resetLayoutBtn" class="danger" style="width:100%">↺ Ripristina aula iniziale</button></div>
+    <input id="importFile" type="file" accept="application/json,.json" hidden />
+  </div>
+</dialog>
+
+<dialog id="exportDialog">
+  <div class="modal-head"><h2>Esporta pianta</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <label>Titolo facoltativo</label>
+    <input id="exportTitle" type="text" placeholder="es. 2A – verifica" />
+    <p class="hint">Il titolo viene usato nel comando <strong>PNG con titolo</strong> e anche nel <strong>PDF</strong>. Se lasci il campo vuoto, il PDF viene esportato senza intestazione.</p>
+  </div>
+  <div class="modal-foot">
+    <button id="exportPngSimpleBtn">PNG semplice</button>
+    <button id="exportPngTitleBtn">PNG con titolo</button>
+    <button id="exportPdfBtn" class="primary">PDF pronta per la stampa</button>
+  </div>
+</dialog>
+
+<dialog id="quickNameDialog">
+  <div class="modal-head"><h2 id="quickNameTitle">Cognome banco</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-body">
+    <p class="hint">Aggiungi o modifica direttamente il cognome assegnato a questo banco.</p>
+    <input id="quickNameInput" type="text" autocomplete="off" autocapitalize="words" placeholder="Cognome" />
+  </div>
+  <div class="modal-foot">
+    <button id="quickNameClearBtn" class="danger">Rimuovi cognome</button>
+    <button id="quickNameSaveBtn" class="primary">Salva</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(() => {
+  const NS='http://www.w3.org/2000/svg';
+  const BASE_W=990.6, BASE_H=685.8;
+  const initialPairs=[
+    [77.5,31.5],[399.8,31.5],[722.8,31.5],
+    [400.8,154.4],[723.2,154.4],
+    [400.8,277.7],[722.8,277.5],
+    [77.8,345.0],[399.8,400.9],[722.8,400.5],
+    [400.8,523.8],[722.8,523.4]
+  ];
+  const initialDesks=[];
+  let id=1;
+  for(const [x,y] of initialPairs){
+    initialDesks.push({id:id++,x,y,w:90,h:72,name:'',rot:0});
+    initialDesks.push({id:id++,x:x+90,y,w:90,h:72,name:'',rot:0});
+  }
+  const initialStructures=[
+    {id:'teacher',kind:'teacher',x:68.1,y:501.6,w:180,h:90.6,rot:30},
+    {id:'door',kind:'door',x:14.7,y:145.1,w:143.6,h:90.7,rot:0},
+    {id:'board',kind:'board',x:328.3,y:652.9,w:324.9,h:8.5,rot:0},
+    {id:'monitor',kind:'monitor',x:679.7,y:652.6,w:245.8,h:6,rot:0},
+    {id:'window',kind:'window',x:951.0,y:31.0,w:21,h:627,rot:0}
+  ];
+
+  let state={
+    desks:structuredClone(initialDesks),
+    structures:structuredClone(initialStructures),
+    names:[], selectedDesk:null, selectedStructure:null,
+    structureLocked:true, used:[], current:null, swapFirst:null, swapMode:false,
+    theme:localStorage.getItem('desk-theme') || 'day'
+  };
+
+  const $=s=>document.querySelector(s);
+  const desksLayer=$('#desks'), structuresLayer=$('#structures'), svg=$('#classroom');
+  const studentsDialog=$('#studentsDialog'), teacherRotateDialog=$('#teacherRotateDialog'), saveDialog=$('#saveDialog'), loadDialog=$('#loadDialog'), exportDialog=$('#exportDialog'), quickNameDialog=$('#quickNameDialog'), helpDialog=$('#helpDialog'), copyrightDialog=$('#copyrightDialog');
+  const namesText=$('#namesText'), manualNameSelect=$('#manualNameSelect');
+  let drag=null;
+  let longPressTimer=null;
+  let quickEditDeskId=null;
+
+  function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),1900)}
+  function parseNames(){
+    return namesText.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,24);
+  }
+  function shuffle(arr){
+    const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
+  }
+  function beep(){
+    try{
+      const A=window.AudioContext||window.webkitAudioContext; const ctx=new A();
+      const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(520,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+.16);
+      g.gain.setValueAtTime(.001,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.14,ctx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.26);
+      o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.28);o.onended=()=>ctx.close();
+    }catch(e){}
+  }
+  let tapAudioCtx=null;
+  function tapBeep(){
+    try{
+      const A=window.AudioContext||window.webkitAudioContext;
+      if(!A)return;
+      if(!tapAudioCtx)tapAudioCtx=new A();
+      if(tapAudioCtx.state==='suspended')tapAudioCtx.resume();
+      const now=tapAudioCtx.currentTime;
+      const o=tapAudioCtx.createOscillator(), g=tapAudioCtx.createGain();
+      o.type='sine';
+      o.frequency.setValueAtTime(720,now);
+      g.gain.setValueAtTime(.0001,now);
+      g.gain.exponentialRampToValueAtTime(.055,now+.006);
+      g.gain.exponentialRampToValueAtTime(.0001,now+.055);
+      o.connect(g);g.connect(tapAudioCtx.destination);o.start(now);o.stop(now+.06);
+    }catch(e){}
+  }
+  function magnetDing(active){
+    try{
+      const A=window.AudioContext||window.webkitAudioContext;
+      if(!A)return;
+      if(!tapAudioCtx)tapAudioCtx=new A();
+      if(tapAudioCtx.state==='suspended')tapAudioCtx.resume();
+      const now=tapAudioCtx.currentTime;
+      const o=tapAudioCtx.createOscillator(), g=tapAudioCtx.createGain();
+      o.type='sine';
+      const start=active?880:740, end=active?1180:600;
+      o.frequency.setValueAtTime(start,now);
+      o.frequency.exponentialRampToValueAtTime(end,now+.12);
+      g.gain.setValueAtTime(.0001,now);
+      g.gain.exponentialRampToValueAtTime(.075,now+.008);
+      g.gain.exponentialRampToValueAtTime(.0001,now+.18);
+      o.connect(g);g.connect(tapAudioCtx.destination);o.start(now);o.stop(now+.19);
+    }catch(e){}
+  }
+  function svgPoint(evt){
+    const p=svg.createSVGPoint();p.x=evt.clientX;p.y=evt.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function saveAuto(){
+    const slim={desks:state.desks,structures:state.structures,names:state.names,structureLocked:state.structureLocked};
+    localStorage.setItem('desk-autosave',JSON.stringify(slim));
+  }
+  function loadAuto(){
+    try{
+      const a=JSON.parse(localStorage.getItem('desk-autosave'));
+      if(a?.desks?.length===24){state.desks=a.desks;state.structures=a.structures||structuredClone(initialStructures);state.names=a.names||[];state.structureLocked=a.structureLocked??true;}
+    }catch(e){}
+  }
+
+  function structureSvg(s){
+    if(s.kind==='teacher') return `<rect x="0" y="0" width="${s.w}" height="${s.h}" rx="2" fill="#fff0c9" stroke="#7030a0" stroke-width="2.2"/>`;
+    if(s.kind==='board') return `<rect x="0" y="0" width="${s.w}" height="${s.h}" fill="#050505"/>`;
+    if(s.kind==='monitor') return `<rect x="0" y="0" width="${s.w}" height="${s.h}" fill="#9c9c9c" stroke="#4d4d4d" stroke-width="1"/>`;
+    if(s.kind==='window') return `<rect x="0" y="0" width="${s.w}" height="${s.h}" fill="#b8d6ec" stroke="#8fb0c7" stroke-width="1"/>`;
+    if(s.kind==='door'){
+      return `<g transform="scale(${s.w/143.6} ${s.h/90.7})">
+        <path d="M10 18 H88 V4 L140 31 L88 58 V46 H10 Z" fill="url(#redArrow)" stroke="#94151d" stroke-width="3"/>
+        <path d="M140 57 H62 V43 L10 70 L62 97 V85 H140 Z" fill="url(#blueArrow)" stroke="#14599a" stroke-width="3" transform="translate(0,-8)"/>
+      </g>`;
+    }
+    return '';
+  }
+
+  function render(){
+    document.body.classList.toggle('night',state.theme==='night');
+    $('#themeBtn').textContent=state.theme==='night'?'☀':'☾';
+    $('#lockBtn').textContent=state.structureLocked?'🔒 Struttura':'🔓 Struttura';
+    $('#lockBtn').classList.toggle('active',!state.structureLocked);
+
+    structuresLayer.innerHTML='';
+    for(const s of state.structures){
+      const g=document.createElementNS(NS,'g');
+      g.classList.add('structure'); if(state.structureLocked)g.classList.add('locked'); if(state.selectedStructure===s.id)g.classList.add('selected');
+      g.dataset.sid=s.id; g.setAttribute('transform',`translate(${s.x} ${s.y}) rotate(${s.rot||0} ${s.w/2} ${s.h/2})`);g.innerHTML=structureSvg(s);
+      structuresLayer.appendChild(g);
+    }
+
+    desksLayer.innerHTML='';
+    for(const d of state.desks){
+      const g=document.createElementNS(NS,'g'); g.classList.add('desk');
+      if(state.selectedDesk===d.id)g.classList.add('selected');
+      if(state.current===d.id)g.classList.add('current');
+      if(state.used.includes(d.id))g.classList.add('used');
+      g.dataset.id=d.id;g.setAttribute('transform',`translate(${d.x} ${d.y})`);
+      const label=esc(d.name||'');
+      g.innerHTML=`<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2"/>
+        <text class="num" x="5" y="12">${d.id}</text>
+        <foreignObject x="5" y="14" width="${Math.max(10,d.w-10)}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname">${label}</div></foreignObject>`;
+      desksLayer.appendChild(g);
+    }
+    const selected=state.desks.find(d=>d.id===state.selectedDesk);
+    const selectedStructure=state.structures.find(s=>s.id===state.selectedStructure);
+    const structureLabel=selectedStructure?.kind==='teacher'?'Cattedra selezionata':(selectedStructure?'Elemento struttura selezionato':'Nessun banco selezionato');
+    $('#selectionText').textContent=selected?`Banco ${selected.id}${selected.name?' · '+selected.name:''}`:structureLabel;
+    $('#selectedBanner').textContent=selected?`Banco selezionato: ${selected.id}${selected.name?' · '+selected.name:''}`:'Seleziona prima un banco sulla pianta.';
+    const assigned=state.desks.filter(d=>d.name).length;
+    $('#statusLeft').innerHTML=`<strong>24</strong> banchi · <strong>${assigned}</strong> cognomi`;
+    $('#statusRight').textContent=`${state.used.length}/24 estratti`;
+    updateManualSelect();
+  }
+
+  function updateManualSelect(){
+    const val=manualNameSelect.value;
+    manualNameSelect.innerHTML='<option value="">— Nessun cognome —</option>'+state.names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    const d=state.desks.find(x=>x.id===state.selectedDesk); manualNameSelect.value=d?.name || (state.names.includes(val)?val:'');
+  }
+
+  function selectDesk(id){
+    if(state.swapMode){
+      if(!state.swapFirst){state.swapFirst=id;toast(`Banco ${id} selezionato: tocca il secondo banco`);}
+      else if(state.swapFirst!==id){
+        const a=state.desks.find(d=>d.id===state.swapFirst),b=state.desks.find(d=>d.id===id);[a.name,b.name]=[b.name,a.name];state.swapFirst=null;state.swapMode=false;toast('Alunni scambiati');saveAuto();
+      }
+    }
+    state.selectedDesk=id;state.selectedStructure=null;render();
+  }
+
+  function clearLongPress(){
+    if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+  }
+  function openQuickNameEditor(id){
+    const d=state.desks.find(x=>x.id===id);if(!d)return;
+    clearLongPress();
+    drag=null;
+    quickEditDeskId=id;
+    state.selectedDesk=id;state.selectedStructure=null;render();
+    $('#quickNameTitle').textContent=`Banco ${id} · cognome`;
+    $('#quickNameInput').value=d.name||'';
+    quickNameDialog.showModal();
+    setTimeout(()=>{const input=$('#quickNameInput');input.focus();input.select();},80);
+  }
+  function updateRosterAfterQuickEdit(oldName,newName){
+    const old=(oldName||'').trim(), neu=(newName||'').trim();
+    let roster=[...state.names];
+    if(old && old!==neu && !state.desks.some(d=>d.name===old)){
+      const idx=roster.indexOf(old);
+      if(idx>=0){
+        if(neu && !roster.includes(neu)) roster[idx]=neu;
+        else roster.splice(idx,1);
+      }
+    }
+    if(neu && !roster.includes(neu) && roster.length<24) roster.push(neu);
+    state.names=roster.slice(0,24);
+  }
+
+  function dragStart(evt,type,id){
+    clearLongPress();
+    const p=svgPoint(evt);
+    if(type==='desk'){
+      const d=state.desks.find(x=>x.id===id);selectDesk(id);
+      drag={type,id,startX:p.x,startY:p.y,origX:d.x,origY:d.y,moved:false,dragging:false,pointerId:evt.pointerId};
+      longPressTimer=setTimeout(()=>{
+        if(drag && drag.type==='desk' && drag.id===id && !drag.moved){
+          if(navigator.vibrate)try{navigator.vibrate(20)}catch(e){}
+          openQuickNameEditor(id);
+        }
+      },550);
+    }else{
+      if(state.structureLocked)return;
+      const s=state.structures.find(x=>x.id===id);state.selectedStructure=id;state.selectedDesk=null;render();
+      drag={type,id,startX:p.x,startY:p.y,origX:s.x,origY:s.y,moved:false,dragging:true,pointerId:evt.pointerId};
+    }
+    evt.target.closest('g')?.setPointerCapture?.(evt.pointerId); evt.preventDefault();
+  }
+  function dragMove(evt){
+    if(!drag)return;
+    const p=svgPoint(evt),dx=p.x-drag.startX,dy=p.y-drag.startY,dist=Math.hypot(dx,dy);
+    if(drag.type==='desk' && !drag.dragging){
+      if(dist<8)return;
+      drag.moved=true;drag.dragging=true;clearLongPress();
+    }else if(dist>1)drag.moved=true;
+    const item=drag.type==='desk'?state.desks.find(x=>x.id===drag.id):state.structures.find(x=>x.id===drag.id);
+    item.x=drag.origX+dx;item.y=drag.origY+dy;
+    if(drag.type==='desk'){item.x=Math.max(-item.w*.6,Math.min(BASE_W-item.w*.4,item.x));item.y=Math.max(-item.h*.6,Math.min(BASE_H-item.h*.4,item.y));}
+    else{item.x=Math.max(-item.w*.7,Math.min(BASE_W-item.w*.3,item.x));item.y=Math.max(-item.h*.7,Math.min(BASE_H-item.h*.3,item.y));}
+    render();
+  }
+  function magneticSnap(d){
+    let x=Math.round(d.x/5)*5,y=Math.round(d.y/5)*5; if(!$('#snapToggle').checked){d.x=x;d.y=y;return;}
+    const tol=10;
+    for(const o of state.desks){if(o.id===d.id)continue;
+      const xC=[o.x,o.x+o.w,o.x-d.w];const yC=[o.y,o.y+o.h,o.y-d.h];
+      for(const c of xC)if(Math.abs(x-c)<tol)x=c;
+      for(const c of yC)if(Math.abs(y-c)<tol)y=c;
+    }
+    d.x=x;d.y=y;
+  }
+  function dragEnd(){
+    clearLongPress();
+    if(!drag)return;
+    if(drag.type==='desk' && drag.dragging)magneticSnap(state.desks.find(x=>x.id===drag.id));
+    if(drag.type!=='desk' || drag.dragging)saveAuto();
+    drag=null;render();
+  }
+
+
+  svg.addEventListener('pointerdown',e=>{
+    const dg=e.target.closest('.desk'); if(dg)return dragStart(e,'desk',+dg.dataset.id);
+    const sg=e.target.closest('.structure'); if(sg)return dragStart(e,'structure',sg.dataset.sid);
+    state.selectedDesk=null;state.selectedStructure=null;render();
+  });
+  svg.addEventListener('pointermove',dragMove);window.addEventListener('pointerup',dragEnd);window.addEventListener('pointercancel',dragEnd);
+
+  $('#helpBtn').onclick=()=>helpDialog.showModal();
+  $('#copyrightBtn').onclick=()=>copyrightDialog.showModal();
+  $('#studentsBtn').onclick=()=>{namesText.value=state.names.join('\n');studentsDialog.showModal();render();};
+  namesText.addEventListener('input',()=>{state.names=parseNames();updateManualSelect();});
+  $('#assignSequentialBtn').onclick=()=>{
+    state.names=parseNames();state.desks.forEach((d,i)=>d.name=state.names[i]||'');state.used=[];state.current=null;saveAuto();render();studentsDialog.close();toast('Cognomi assegnati in ordine');
+  };
+  $('#assignRandomBtn').onclick=()=>{
+    state.names=parseNames();const a=shuffle(state.names);state.desks.forEach((d,i)=>d.name=a[i]||'');state.used=[];state.current=null;saveAuto();render();studentsDialog.close();toast('Cognomi distribuiti casualmente');
+  };
+  $('#shuffleBtn').onclick=()=>{
+    const assigned=state.desks.map(d=>d.name).filter(Boolean);if(!assigned.length){toast('Prima inserisci i cognomi');return;}
+    const a=shuffle(assigned);let i=0;state.desks.forEach(d=>{if(d.name)d.name=a[i++]||''});state.used=[];state.current=null;saveAuto();render();toast('Cognomi mescolati');
+  };
+  $('#clearNamesBtn').onclick=()=>{state.desks.forEach(d=>d.name='');state.names=[];namesText.value='';state.used=[];state.current=null;saveAuto();render();toast('Assegnazioni cancellate')};
+  $('#manualAssignBtn').onclick=()=>{
+    const d=state.desks.find(x=>x.id===state.selectedDesk);if(!d){toast('Seleziona prima un banco');return;}state.names=parseNames();d.name=manualNameSelect.value;saveAuto();render();toast(`Banco ${d.id} aggiornato`);
+  };
+  $('#swapModeBtn').onclick=()=>{studentsDialog.close();state.swapMode=true;state.swapFirst=null;toast('Tocca il primo banco da scambiare')};
+  $('#quickNameSaveBtn').onclick=()=>{
+    const d=state.desks.find(x=>x.id===quickEditDeskId);if(!d){quickNameDialog.close();return;}
+    const oldName=d.name||'';
+    const newName=$('#quickNameInput').value.trim();
+    const duplicate=state.desks.find(x=>x.id!==d.id && x.name && x.name.toLocaleLowerCase('it')===newName.toLocaleLowerCase('it'));
+    if(newName && duplicate && !confirm(`${newName} è già assegnato al banco ${duplicate.id}. Vuoi assegnarlo anche al banco ${d.id}?`))return;
+    d.name=newName;
+    updateRosterAfterQuickEdit(oldName,newName);
+    state.used=[];state.current=null;
+    saveAuto();render();quickNameDialog.close();
+    toast(newName?`Banco ${d.id}: ${newName}`:`Cognome rimosso dal banco ${d.id}`);
+  };
+  $('#quickNameClearBtn').onclick=()=>{
+    const d=state.desks.find(x=>x.id===quickEditDeskId);if(!d){quickNameDialog.close();return;}
+    const oldName=d.name||'';d.name='';updateRosterAfterQuickEdit(oldName,'');
+    state.used=[];state.current=null;saveAuto();render();quickNameDialog.close();toast(`Cognome rimosso dal banco ${d.id}`);
+  };
+  $('#quickNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#quickNameSaveBtn').click();}});
+
+
+  $('#extractBtn').onclick=()=>{
+    let pool=state.desks.filter(d=>d.name);if(!pool.length)pool=state.desks;
+    if($('#noRepeat').checked)pool=pool.filter(d=>!state.used.includes(d.id));
+    if(!pool.length){toast('Tutti i banchi sono già stati estratti');return;}
+    let flashes=0;const seq=setInterval(()=>{
+      const d=pool[Math.floor(Math.random()*pool.length)];state.current=d.id;render();flashes++;
+      if(flashes>=8){clearInterval(seq);const w=pool[Math.floor(Math.random()*pool.length)];state.current=w.id;if($('#noRepeat').checked&&!state.used.includes(w.id))state.used.push(w.id);state.selectedDesk=w.id;render();beep();toast(w.name?`Estratto: ${w.name}`:`Estratto: banco ${w.id}`);}
+    },75);
+  };
+  $('#resetDrawBtn').onclick=()=>{state.used=[];state.current=null;render();toast('Estrazioni azzerate')};
+
+  $('#rotateBtn').onclick=()=>{
+    const d=state.desks.find(x=>x.id===state.selectedDesk);
+    if(d){
+      const cx=d.x+d.w/2,cy=d.y+d.h/2;[d.w,d.h]=[d.h,d.w];d.x=cx-d.w/2;d.y=cy-d.h/2;d.rot=(d.rot+90)%180;magneticSnap(d);saveAuto();render();
+      return;
+    }
+    const s=state.structures.find(x=>x.id===state.selectedStructure);
+    if(s?.kind==='teacher'){
+      const current=Number(s.rot||0);
+      teacherRotateDialog.querySelectorAll('[data-teacher-angle]').forEach(b=>{
+        b.classList.toggle('active-angle',Number(b.dataset.teacherAngle)===current);
+      });
+      teacherRotateDialog.showModal();
+      return;
+    }
+    if(s){toast('La rotazione è disponibile per i banchi e per la cattedra');return;}
+    toast(state.structureLocked?'Seleziona un banco oppure sblocca la Struttura e seleziona la cattedra':'Seleziona un banco o la cattedra da ruotare');
+  };
+  teacherRotateDialog.querySelectorAll('[data-teacher-angle]').forEach(b=>{
+    b.onclick=()=>{
+      const s=state.structures.find(x=>x.id===state.selectedStructure);
+      if(!s || s.kind!=='teacher'){teacherRotateDialog.close();return;}
+      s.rot=Number(b.dataset.teacherAngle);
+      saveAuto();render();teacherRotateDialog.close();
+      toast(s.rot===0?'Cattedra raddrizzata':`Cattedra inclinata di ${s.rot>0?'+':''}${s.rot}°`);
+    };
+  });
+
+  $('#lockBtn').onclick=()=>{state.structureLocked=!state.structureLocked;state.selectedStructure=null;saveAuto();render();toast(state.structureLocked?'Struttura bloccata':'Struttura sbloccata')};
+
+  function getSaves(){try{return JSON.parse(localStorage.getItem('desk-saves'))||{}}catch(e){return{}}}
+  function setSaves(x){localStorage.setItem('desk-saves',JSON.stringify(x))}
+  $('#saveBtn').onclick=()=>{const d=new Date();$('#saveName').value=`Disposizione ${d.toLocaleDateString('it-IT')}`;saveDialog.showModal();setTimeout(()=>$('#saveName').select(),50)};
+  $('#confirmSave').onclick=()=>{
+    const name=$('#saveName').value.trim();if(!name){toast('Inserisci un nome');return;}
+    const saves=getSaves();saves[name]={savedAt:new Date().toISOString(),desks:structuredClone(state.desks),structures:structuredClone(state.structures),names:[...state.names],structureLocked:state.structureLocked};setSaves(saves);saveDialog.close();toast('Disposizione salvata');
+  };
+  function renderSaveList(){
+    const saves=getSaves(),keys=Object.keys(saves).sort((a,b)=>new Date(saves[b].savedAt)-new Date(saves[a].savedAt));
+    $('#saveList').innerHTML=keys.length?'':'<p class="hint">Non ci sono ancora disposizioni salvate su questo dispositivo.</p>';
+    for(const k of keys){const s=saves[k],el=document.createElement('div');el.className='save-item';el.innerHTML=`<div class="meta"><b>${esc(k)}</b><small>${new Date(s.savedAt).toLocaleString('it-IT')}</small></div><div class="actions"><button data-load="${esc(k)}">Apri</button><button class="danger" data-del="${esc(k)}">×</button></div>`;$('#saveList').appendChild(el)}
+  }
+  $('#loadBtn').onclick=()=>{renderSaveList();loadDialog.showModal()};
+  $('#saveList').onclick=e=>{
+    const name=e.target.dataset.load||e.target.dataset.del;if(!name)return;const saves=getSaves();
+    if(e.target.dataset.del){if(confirm(`Eliminare “${name}”?`)){delete saves[name];setSaves(saves);renderSaveList();}return;}
+    const s=saves[name];if(s){state.desks=structuredClone(s.desks);state.structures=structuredClone(s.structures);state.names=[...(s.names||[])];state.structureLocked=s.structureLocked??true;state.used=[];state.current=null;state.selectedDesk=null;saveAuto();render();loadDialog.close();toast(`Caricata: ${name}`)}
+  };
+
+  function roundRect(ctx,x,y,w,h,r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
+  function polygon(ctx,pts){
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.closePath();
+  }
+  function wrapLineByChars(ctx,text,maxWidth){
+    const chars=[...String(text)];
+    const lines=[]; let current='';
+    for(const ch of chars){
+      const trial=current+ch;
+      if(current && ctx.measureText(trial).width>maxWidth){ lines.push(current); current=ch; }
+      else current=trial;
+    }
+    if(current)lines.push(current);
+    return lines;
+  }
+  function wrapWords(ctx,text,maxWidth){
+    const words=String(text).trim().split(/\s+/).filter(Boolean);
+    if(!words.length)return [''];
+    const lines=[]; let current='';
+    for(const word of words){
+      const trial=current? current+' '+word : word;
+      if(current && ctx.measureText(trial).width>maxWidth){
+        lines.push(current);
+        if(ctx.measureText(word).width>maxWidth){
+          lines.push(...wrapLineByChars(ctx,word,maxWidth));
+          current='';
+        }else current=word;
+      }else if(!current && ctx.measureText(word).width>maxWidth){
+        lines.push(...wrapLineByChars(ctx,word,maxWidth));
+      }else current=trial;
+    }
+    if(current)lines.push(current);
+    return lines.slice(0,4);
+  }
+  function fitDeskLines(ctx,text,w,h){
+    const innerW=Math.max(18,w-12), innerH=Math.max(18,h-18);
+    for(let font=15;font>=8;font--){
+      ctx.font=`800 ${font}px Inter, Arial, sans-serif`;
+      const lines=wrapWords(ctx,text,innerW);
+      const lineHeight=font*1.05;
+      const total=lines.length*lineHeight;
+      if(total<=innerH && lines.every(line=>ctx.measureText(line).width<=innerW+0.5)) return {font,lines,lineHeight};
+    }
+    const font=8; ctx.font=`800 ${font}px Inter, Arial, sans-serif`;
+    const lines=wrapLineByChars(ctx,text,Math.max(18,w-12)).slice(0,4);
+    return {font,lines,lineHeight:font*1.05};
+  }
+  function drawDoor(ctx,s){
+    ctx.save();
+    ctx.translate(s.x,s.y);
+    const sx=s.w/143.6, sy=s.h/90.7;
+    ctx.scale(sx,sy);
+    const gradR=ctx.createLinearGradient(10,0,140,0);
+    gradR.addColorStop(0,'#ff1e2d'); gradR.addColorStop(1,'#ff6f6f');
+    polygon(ctx,[[10,18],[88,18],[88,4],[140,31],[88,58],[88,46],[10,46]]);
+    ctx.fillStyle=gradR; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle='#94151d'; ctx.stroke();
+    const gradB=ctx.createLinearGradient(10,0,140,0);
+    gradB.addColorStop(0,'#63b8ff'); gradB.addColorStop(1,'#1579d1');
+    ctx.translate(0,-8);
+    polygon(ctx,[[140,57],[62,57],[62,43],[10,70],[62,97],[62,85],[140,85]]);
+    ctx.fillStyle=gradB; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle='#14599a'; ctx.stroke();
+    ctx.restore();
+  }
+  function drawStructure(ctx,s){
+    if(s.kind==='door'){ drawDoor(ctx,s); return; }
+    ctx.save();
+    const cx=s.x+s.w/2, cy=s.y+s.h/2;
+    ctx.translate(cx,cy); ctx.rotate((Number(s.rot||0))*Math.PI/180); ctx.translate(-s.w/2,-s.h/2);
+    if(s.kind==='teacher'){
+      roundRect(ctx,0,0,s.w,s.h,2); ctx.fillStyle='#fff0c9'; ctx.fill(); ctx.lineWidth=2.2; ctx.strokeStyle='#7030a0'; ctx.stroke();
+    }else if(s.kind==='board'){
+      ctx.fillStyle='#050505'; ctx.fillRect(0,0,s.w,s.h);
+    }else if(s.kind==='monitor'){
+      ctx.fillStyle='#9c9c9c'; ctx.fillRect(0,0,s.w,s.h); ctx.lineWidth=1; ctx.strokeStyle='#4d4d4d'; ctx.strokeRect(0,0,s.w,s.h);
+    }else if(s.kind==='window'){
+      ctx.fillStyle='#b8d6ec'; ctx.fillRect(0,0,s.w,s.h); ctx.lineWidth=1; ctx.strokeStyle='#8fb0c7'; ctx.strokeRect(0,0,s.w,s.h);
+    }
+    ctx.restore();
+  }
+  function drawDesk(ctx,d){
+    ctx.save();
+    roundRect(ctx,d.x,d.y,d.w,d.h,2);
+    ctx.fillStyle='#fffdf7'; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='#16832b'; ctx.stroke();
+    ctx.fillStyle='#667085'; ctx.font='700 10px Inter, Arial, sans-serif';
+    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(String(d.id),d.x+5,d.y+4);
+    const name=(d.name||'').trim();
+    if(name){
+      const boxX=d.x+5, boxY=d.y+14, boxW=d.w-10, boxH=d.h-19;
+      const fit=fitDeskLines(ctx,name,boxW,boxH);
+      ctx.fillStyle='#17202a'; ctx.font=`800 ${fit.font}px Inter, Arial, sans-serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      const startY=boxY + (boxH - fit.lines.length*fit.lineHeight)/2 + fit.lineHeight/2;
+      fit.lines.forEach((line,idx)=>ctx.fillText(line,boxX+boxW/2,startY+idx*fit.lineHeight));
+    }
+    ctx.restore();
+  }
+  function renderLayoutToCanvas(opts={}){
+    const title=String(opts.title||'').trim();
+    const includeTitle=!!title;
+    const pad=18;
+    const titleSpace=includeTitle?70:0;
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.round(BASE_W + pad*2);
+    canvas.height=Math.round(BASE_H + pad*2 + titleSpace);
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(includeTitle){
+      ctx.fillStyle='#17202a';
+      ctx.font='700 28px Inter, Arial, sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(title,canvas.width/2,28);
+      ctx.font='400 12px Inter, Arial, sans-serif';
+      ctx.fillStyle='#667085';
+      ctx.fillText('Pianta dell’aula',canvas.width/2,52);
+    }
+    ctx.save();
+    ctx.translate(pad,pad+titleSpace);
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,BASE_W,BASE_H);
+    ctx.strokeStyle='#d7d1c5'; ctx.lineWidth=2; ctx.strokeRect(1,1,BASE_W-2,BASE_H-2);
+    state.structures.forEach(s=>drawStructure(ctx,s));
+    state.desks.forEach(d=>drawDesk(ctx,d));
+    ctx.restore();
+    return canvas;
+  }
+  async function downloadOrShareBlob(blob,fileName,mimeType){
+    const file=new File([blob],fileName,{type:mimeType||blob.type||'application/octet-stream'});
+    if(navigator.canShare && navigator.share){
+      try{
+        if(navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'Disposizione banchi'});
+          return true;
+        }
+      }catch(err){
+        if(err && err.name==='AbortError') return false;
+      }
+    }
+    const a=document.createElement('a');
+    const url=URL.createObjectURL(blob);
+    a.href=url; a.download=fileName; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    return true;
+  }
+  async function exportPng(includeTitle){
+    const title=includeTitle ? ($('#exportTitle').value||'').trim() : '';
+    if(includeTitle && !title){ toast('Inserisci prima un titolo'); return; }
+    const baseCanvas=renderLayoutToCanvas({title});
+    const scale=Math.max(2, Math.min(3, window.devicePixelRatio || 2));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.round(baseCanvas.width*scale); canvas.height=Math.round(baseCanvas.height*scale);
+    const ctx=canvas.getContext('2d'); ctx.scale(scale,scale); ctx.drawImage(baseCanvas,0,0);
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG non creato')),'image/png'));
+    const stamp=new Date();
+    const suffix=includeTitle?'-titolo':'';
+    const fileName=`disposizione-banchi${suffix}-${stamp.getFullYear()}-${String(stamp.getMonth()+1).padStart(2,'0')}-${String(stamp.getDate()).padStart(2,'0')}_${String(stamp.getHours()).padStart(2,'0')}-${String(stamp.getMinutes()).padStart(2,'0')}.png`;
+    await downloadOrShareBlob(blob,fileName,'image/png');
+    exportDialog.close();
+    toast(includeTitle?'PNG con titolo esportato':'PNG esportato');
+  }
+  function textBytes(s){ return new TextEncoder().encode(s); }
+  function binaryStringToBytes(s){ const a=new Uint8Array(s.length); for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i)&255; return a; }
+  function buildPdfWithJpeg(jpegBinary,imgW,imgH,pageW=841.89,pageH=595.28){
+    const margin=36;
+    const maxW=pageW - margin*2;
+    const maxH=pageH - margin*2;
+    const ratio=Math.min(maxW/imgW,maxH/imgH);
+    const drawW=imgW*ratio, drawH=imgH*ratio;
+    const x=(pageW-drawW)/2, y=(pageH-drawH)/2;
+    const stream=`q\n${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm\n/Im0 Do\nQ`;
+    const header='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+    const obj1='1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+    const obj2='2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+    const obj3=`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(2)} ${pageH.toFixed(2)}] /Resources << /ProcSet [/PDF /ImageC] /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>\nendobj\n`;
+    const obj4=`4 0 obj\n<< /Length ${textBytes(stream).length} >>\nstream\n${stream}\nendstream\nendobj\n`;
+    const obj5Start=`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBinary.length} >>\nstream\n`;
+    const obj5End='\nendstream\nendobj\n';
+    const pieces=[];
+    let length=0;
+    const offsets=[0];
+    function pushTextPiece(str){ const bytes=textBytes(str); pieces.push(bytes); length+=bytes.length; }
+    function pushBinPiece(bin){ const bytes=binaryStringToBytes(bin); pieces.push(bytes); length+=bytes.length; }
+    pushTextPiece(header);
+    offsets[1]=length; pushTextPiece(obj1);
+    offsets[2]=length; pushTextPiece(obj2);
+    offsets[3]=length; pushTextPiece(obj3);
+    offsets[4]=length; pushTextPiece(obj4);
+    offsets[5]=length; pushTextPiece(obj5Start); pushBinPiece(jpegBinary); pushTextPiece(obj5End);
+    const xrefStart=length;
+    let xref='xref\n0 6\n0000000000 65535 f \n';
+    for(let i=1;i<=5;i++) xref += `${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+    const trailer=`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+    pushTextPiece(xref); pushTextPiece(trailer);
+    return new Blob(pieces,{type:'application/pdf'});
+  }
+  async function exportPdf(){
+    const title=($('#exportTitle').value||'').trim();
+    const canvas=renderLayoutToCanvas({title});
+    const jpegDataUrl=canvas.toDataURL('image/jpeg',0.92);
+    const base64=jpegDataUrl.split(',')[1];
+    const jpegBinary=atob(base64);
+    const pdfBlob=buildPdfWithJpeg(jpegBinary,canvas.width,canvas.height);
+    const stamp=new Date();
+    const fileName=`disposizione-banchi-${stamp.getFullYear()}-${String(stamp.getMonth()+1).padStart(2,'0')}-${String(stamp.getDate()).padStart(2,'0')}_${String(stamp.getHours()).padStart(2,'0')}-${String(stamp.getMinutes()).padStart(2,'0')}.pdf`;
+    await downloadOrShareBlob(pdfBlob,fileName,'application/pdf');
+    exportDialog.close();
+    toast('PDF esportato');
+  }
+  $('#exportOpenBtn').onclick=()=>{ $('#exportTitle').value=''; exportDialog.showModal(); setTimeout(()=>$('#exportTitle').focus(),30); };
+  $('#exportPngSimpleBtn').onclick=()=>exportPng(false);
+  $('#exportPngTitleBtn').onclick=()=>exportPng(true);
+  $('#exportPdfBtn').onclick=exportPdf;
+
+  $('#exportBtn').onclick=()=>{
+    const payload={format:'disposizione-banchi-v1',exportedAt:new Date().toISOString(),savedLayouts:getSaves(),current:{desks:state.desks,structures:state.structures,names:state.names,structureLocked:state.structureLocked}};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='disposizione-banchi-backup.json';a.click();URL.revokeObjectURL(a.href);toast('Backup esportato');
+  };
+  $('#importBtn').onclick=()=>$('#importFile').click();
+  $('#resetLayoutBtn').onclick=()=>{
+    if(!confirm('Ripristinare la pianta iniziale dell’aula? I cognomi verranno mantenuti, ma le posizioni torneranno al modello originale.'))return;
+    const currentNames=state.desks.map(d=>d.name);
+    state.desks=structuredClone(initialDesks);state.desks.forEach((d,i)=>d.name=currentNames[i]||'');
+    state.structures=structuredClone(initialStructures);state.structureLocked=true;state.used=[];state.current=null;state.selectedDesk=null;state.selectedStructure=null;saveAuto();render();loadDialog.close();toast('Aula iniziale ripristinata');
+  };
+  $('#importFile').onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(j.savedLayouts)setSaves(j.savedLayouts);if(j.current?.desks?.length===24){state.desks=j.current.desks;state.structures=j.current.structures||structuredClone(initialStructures);state.names=j.current.names||[];state.structureLocked=j.current.structureLocked??true;saveAuto();render();}renderSaveList();toast('Backup importato');}catch(err){alert('Il file non sembra un backup valido.')}e.target.value='';
+  };
+
+  $('#themeBtn').onclick=()=>{state.theme=state.theme==='day'?'night':'day';localStorage.setItem('desk-theme',state.theme);render()};
+
+  // Piccolo ding dedicato all'attivazione/disattivazione del magnete.
+  $('#snapToggle').addEventListener('change',e=>{
+    magnetDing(e.target.checked);
+    toast(e.target.checked?'Magnete attivato':'Magnete disattivato');
+  });
+
+  // Segnale acustico breve e immediato per ogni tap sui pulsanti.
+  document.addEventListener('pointerdown',e=>{
+    const b=e.target.closest('button');
+    if(b && !b.disabled)tapBeep();
+  },true);
+
+  function updateStageFit(){
+    const landscape=window.matchMedia('(orientation: landscape) and (max-height: 900px)').matches;
+    if(!landscape){
+      $('#stageWrap').classList.remove('landscape-fit');
+      $('#stageWrap').style.height='';
+      return;
+    }
+    const wrap=$('#stageWrap');
+    const status=document.querySelector('.status');
+    const app=document.querySelector('.app');
+    const rect=wrap.getBoundingClientRect();
+    const pageTop=rect.top + window.scrollY;
+    const statusH=status?.offsetHeight || 0;
+    const appStyle=getComputedStyle(app);
+    const bottomPad=parseFloat(appStyle.paddingBottom)||0;
+    // Riserva qualche pixel per bordi e margini: il resto diventa altezza utile della pianta.
+    const available=Math.max(140, window.innerHeight - pageTop - statusH - bottomPad - 8);
+    wrap.classList.add('landscape-fit');
+    wrap.style.height=`${available}px`;
+  }
+
+  function nativeFullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null;}
+  function updateFullscreenButton(){
+    const active=!!nativeFullscreenElement()||document.body.classList.contains('pseudo-fullscreen');
+    $('#fullscreenBtn').textContent=active?'✕':'⛶';
+    $('#fullscreenBtn').title=active?'Esci da tutto schermo':'Schermo intero';
+    requestAnimationFrame(updateStageFit);
+  }
+  async function toggleFullscreen(){
+    // Se stiamo usando il fallback iOS, il secondo tap lo chiude subito.
+    if(document.body.classList.contains('pseudo-fullscreen')){
+      document.body.classList.remove('pseudo-fullscreen');updateFullscreenButton();return;
+    }
+    const current=nativeFullscreenElement();
+    const exit=document.exitFullscreen||document.webkitExitFullscreen;
+    if(current&&exit){
+      try{await exit.call(document);}catch(e){}
+      updateFullscreenButton();return;
+    }
+    const root=document.documentElement;
+    const request=root.requestFullscreen||root.webkitRequestFullscreen;
+    if(request){
+      try{
+        await request.call(root);updateFullscreenButton();return;
+      }catch(e){
+        // Safari/iPad può esporre l'API ma rifiutarla per la pagina corrente: usiamo il fallback.
+      }
+    }
+    document.body.classList.add('pseudo-fullscreen');
+    window.scrollTo(0,0);updateFullscreenButton();
+    toast('Vista a tutto schermo attivata');
+  }
+  $('#fullscreenBtn').onclick=toggleFullscreen;
+  document.addEventListener('fullscreenchange',updateFullscreenButton);
+  document.addEventListener('webkitfullscreenchange',updateFullscreenButton);
+
+  document.querySelectorAll('dialog .close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+  [studentsDialog,saveDialog,loadDialog,teacherRotateDialog,exportDialog,quickNameDialog,helpDialog,copyrightDialog].forEach(d=>d.addEventListener('click',e=>{const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()}));
+
+  // Tap: seleziona. Trascinamento: sposta. Pressione lunga: aggiunge/modifica il cognome.
+  window.addEventListener('resize',()=>requestAnimationFrame(updateStageFit));
+  window.addEventListener('orientationchange',()=>setTimeout(updateStageFit,120));
+  loadAuto();render();updateFullscreenButton();requestAnimationFrame(updateStageFit);
+
+  // PWA: registra il Service Worker per l'uso offline quando l'app è pubblicata via HTTPS (es. GitHub Pages).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service Worker non registrato:', err));
+    });
+  }
+})();
+</script>
+</body>
+</html>
