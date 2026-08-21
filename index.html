@@ -60,14 +60,18 @@
   body.night .desk text.num{fill:#c8d1cc}
   .desk .surname{font-size:13px;line-height:1.05;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;height:100%;overflow:hidden;padding:5px;word-break:break-word;pointer-events:none}
   /* Evidenziazione estrazioni: contrasto forte anche in Safari/iPadOS. */
-  body.night .desk.used:not(.current) rect.main{fill:#46534e;stroke:#9fb0a8;stroke-width:3}
+  /* In modalità notte i banchi già estratti restano scuri ma con bordo arancione persistente. */
+  body.night .desk.used:not(.current) rect.main{fill:#202925;stroke:#ffb347;stroke-width:5}
   body.night .desk.used:not(.current) .surname{color:#f5f7f6}
-  body.night .desk.used:not(.current) text.num{fill:#e6ece9}
+  body.night .desk.used:not(.current) text.num{fill:#ffe0a3}
+  body.night .desk.used:not(.current) .used-ring{stroke:#ffd28a;stroke-width:3;opacity:.95}
   body.night .desk.current rect.main{fill:#ffe066;stroke:#ff8a00;stroke-width:7;filter:url(#glow)}
   body.night .desk.current .surname{color:#17202a}
   body.night .desk.current text.num{fill:#6b4300}
-  .desk .extract-ring{pointer-events:none;fill:none;stroke:#ff9f00;stroke-width:4;opacity:.96}
+  .desk .extract-ring,.desk .used-ring{pointer-events:none;fill:none}
+  .desk .extract-ring{stroke:#ff9f00;stroke-width:4;opacity:.96}
   body.night .desk .extract-ring{stroke:#fff1a8;stroke-width:5}
+  .desk .used-ring{stroke:transparent;stroke-width:0;opacity:0}
   .structure{cursor:grab}
   .structure.locked{cursor:default}
   .structure.selected{filter:url(#blueGlow)}
@@ -170,7 +174,7 @@
     <button id="studentsBtn">👥 Alunni</button>
     <button id="shuffleBtn" class="soft">🔀 Mescola</button>
     <button id="extractBtn" class="primary">🎲 Estrai</button>
-    <label title="Se attivo, ogni banco viene estratto una sola volta"><input id="noRepeat" type="checkbox" checked> senza rip.</label>
+    <label title="Se attivo, ogni banco viene estratto una sola volta. In modalità notte, i banchi già estratti restano bordati in arancione"><input id="noRepeat" type="checkbox" checked> senza rip.</label>
     <button id="resetDrawBtn" title="Azzera tutte le estrazioni e ricomincia da capo" aria-label="Azzera estrazioni">↺ <span class="reset-long">Azzera estr.</span><span class="reset-short">Reset</span></button>
     <span class="spacer"></span>
     <button id="rotateBtn" title="Ruota il banco o la cattedra selezionata">↻ Ruota</button>
@@ -541,11 +545,12 @@
       const night=state.theme==='night';
       const inlineMain=isCurrent
         ? `style="fill:${night?'#ffe066':'#ffd84d'};stroke:${night?'#ff8a00':'#8b6500'};stroke-width:${night?7:5}px"`
-        : (night && isUsed ? 'style="fill:#46534e;stroke:#9fb0a8;stroke-width:3px"' : '');
+        : (night && isUsed ? 'style="fill:#202925;stroke:#ffb347;stroke-width:5px"' : '');
       const ring=isCurrent ? `<rect class="extract-ring" x="-4" y="-4" width="${d.w+8}" height="${d.h+8}" rx="7"/>` : '';
+      const usedRing=(night && isUsed && !isCurrent) ? `<rect class="used-ring" x="-3" y="-3" width="${d.w+6}" height="${d.h+6}" rx="6" style="stroke:#ffd28a;stroke-width:3px;opacity:.95"/>` : '';
       const nameStyle=isCurrent ? ' style="color:#17202a"' : '';
       const numStyle=isCurrent ? ` style="fill:${night?'#6b4300':'#6b4300'}"` : '';
-      g.innerHTML=`${ring}<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2" ${inlineMain}/>
+      g.innerHTML=`${usedRing}${ring}<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2" ${inlineMain}/>
         <text class="num" x="5" y="12"${numStyle}>${d.id}</text>
         <foreignObject x="5" y="14" width="${Math.max(10,d.w-10)}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname"${nameStyle}>${label}</div></foreignObject>`;
       desksLayer.appendChild(g);
