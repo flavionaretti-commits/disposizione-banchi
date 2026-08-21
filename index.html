@@ -59,10 +59,15 @@
   .desk text.num{font-size:10px;fill:#667085;font-weight:700;pointer-events:none}
   body.night .desk text.num{fill:#c8d1cc}
   .desk .surname{font-size:13px;line-height:1.05;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;height:100%;overflow:hidden;padding:5px;word-break:break-word;pointer-events:none}
-  /* In modalità notte il banco appena estratto deve risaltare nettamente sui banchi scuri. */
-  body.night .desk.current rect.main{fill:#ffd84d;stroke:#ff7a00;stroke-width:6;filter:url(#glow)}
+  /* Evidenziazione estrazioni: contrasto forte anche in Safari/iPadOS. */
+  body.night .desk.used:not(.current) rect.main{fill:#46534e;stroke:#9fb0a8;stroke-width:3}
+  body.night .desk.used:not(.current) .surname{color:#f5f7f6}
+  body.night .desk.used:not(.current) text.num{fill:#e6ece9}
+  body.night .desk.current rect.main{fill:#ffe066;stroke:#ff8a00;stroke-width:7;filter:url(#glow)}
   body.night .desk.current .surname{color:#17202a}
   body.night .desk.current text.num{fill:#6b4300}
+  .desk .extract-ring{pointer-events:none;fill:none;stroke:#ff9f00;stroke-width:4;opacity:.96}
+  body.night .desk .extract-ring{stroke:#fff1a8;stroke-width:5}
   .structure{cursor:grab}
   .structure.locked{cursor:default}
   .structure.selected{filter:url(#blueGlow)}
@@ -531,9 +536,18 @@
       if(state.used.includes(d.id))g.classList.add('used');
       g.dataset.id=d.id;g.setAttribute('transform',`translate(${d.x} ${d.y})`);
       const label=esc(d.name||'');
-      g.innerHTML=`<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2"/>
-        <text class="num" x="5" y="12">${d.id}</text>
-        <foreignObject x="5" y="14" width="${Math.max(10,d.w-10)}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname">${label}</div></foreignObject>`;
+      const isCurrent=state.current===d.id;
+      const isUsed=state.used.includes(d.id);
+      const night=state.theme==='night';
+      const inlineMain=isCurrent
+        ? `style="fill:${night?'#ffe066':'#ffd84d'};stroke:${night?'#ff8a00':'#8b6500'};stroke-width:${night?7:5}px"`
+        : (night && isUsed ? 'style="fill:#46534e;stroke:#9fb0a8;stroke-width:3px"' : '');
+      const ring=isCurrent ? `<rect class="extract-ring" x="-4" y="-4" width="${d.w+8}" height="${d.h+8}" rx="7"/>` : '';
+      const nameStyle=isCurrent ? ' style="color:#17202a"' : '';
+      const numStyle=isCurrent ? ` style="fill:${night?'#6b4300':'#6b4300'}"` : '';
+      g.innerHTML=`${ring}<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2" ${inlineMain}/>
+        <text class="num" x="5" y="12"${numStyle}>${d.id}</text>
+        <foreignObject x="5" y="14" width="${Math.max(10,d.w-10)}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname"${nameStyle}>${label}</div></foreignObject>`;
       desksLayer.appendChild(g);
     }
     const selected=state.desks.find(d=>d.id===state.selectedDesk);

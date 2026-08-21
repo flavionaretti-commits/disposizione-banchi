@@ -1,4 +1,4 @@
-const CACHE_NAME = 'disposizione-banchi-pwa-v4';
+const CACHE_NAME = 'disposizione-banchi-pwa-v5';
 const APP_SHELL = [
   './',
   './index.html',
