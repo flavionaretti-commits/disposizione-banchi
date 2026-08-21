@@ -59,6 +59,10 @@
   .desk text.num{font-size:10px;fill:#667085;font-weight:700;pointer-events:none}
   body.night .desk text.num{fill:#c8d1cc}
   .desk .surname{font-size:13px;line-height:1.05;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;height:100%;overflow:hidden;padding:5px;word-break:break-word;pointer-events:none}
+  /* In modalità notte il banco appena estratto deve risaltare nettamente sui banchi scuri. */
+  body.night .desk.current rect.main{fill:#ffd84d;stroke:#ff7a00;stroke-width:6;filter:url(#glow)}
+  body.night .desk.current .surname{color:#17202a}
+  body.night .desk.current text.num{fill:#6b4300}
   .structure{cursor:grab}
   .structure.locked{cursor:default}
   .structure.selected{filter:url(#blueGlow)}
