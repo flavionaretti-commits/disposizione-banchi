@@ -1,18 +1,33 @@
 {
   "name": "Disposizione banchi",
   "short_name": "Banchi",
-  "description": "App per organizzare la disposizione dei banchi, assegnare cognomi ed estrarre casualmente un alunno.",
-  "id": "./",
-  "start_url": "./index.html",
+  "description": "App per organizzare la disposizione dei banchi (da 1 a 30), assegnare cognomi ed estrarre casualmente un alunno.",
+  "id": "/disposizione-banchi/",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f3efe6",
-  "theme_color": "#2f6f55",
+  "theme_color": "#e77722",
   "lang": "it-IT",
   "icons": [
-    {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

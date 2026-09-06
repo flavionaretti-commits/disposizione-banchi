@@ -1,8 +1,7 @@
-const CACHE_NAME = 'disposizione-banchi-pwa-v6';
+const CACHE_NAME = 'disposizione-banchi-pwa-v7';
 const APP_SHELL = [
   './',
   './index.html',
-  './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
@@ -29,6 +28,16 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Il manifest deve essere controllato in rete per recepire subito l'identità PWA.
+  if (url.pathname.endsWith('/manifest.webmanifest')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => response)
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
