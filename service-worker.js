@@ -1,4 +1,5 @@
 const CACHE_NAME = 'disposizione-banchi-pwa-v7';
+const CACHE_PREFIX = 'disposizione-banchi-pwa-';
 const APP_SHELL = [
   './',
   './index.html',
@@ -19,7 +20,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
