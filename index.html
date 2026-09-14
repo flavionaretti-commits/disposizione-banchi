@@ -177,7 +177,7 @@
     <label title="Se attivo, ogni banco viene estratto una sola volta. In modalità notte, i banchi già estratti restano bordati in arancione"><input id="noRepeat" type="checkbox" checked> senza rip.</label>
     <button id="resetDrawBtn" title="Azzera tutte le estrazioni e ricomincia da capo" aria-label="Azzera estrazioni">↺ <span class="reset-long">Azzera estr.</span><span class="reset-short">Reset</span></button>
     <span class="spacer"></span>
-    <button id="rotateBtn" title="Ruota il banco o la cattedra selezionata">↻ Ruota</button>
+    <button id="rotateBtn" title="Ruota il banco, la cattedra o il monitor selezionato">↻ Ruota</button>
     <button id="lockBtn" title="Blocca o sblocca cattedra, porta, lavagna, monitor e davanzale">🔒 Struttura</button>
     <label title="Allinea automaticamente i banchi quando li avvicini"><input id="snapToggle" type="checkbox" checked> magnete</label>
     <button id="saveBtn">💾 Salva</button>
@@ -225,7 +225,7 @@
         <li><strong>Tap su un banco</strong> → lo seleziona.</li>
         <li><strong>Trascina un banco</strong> → lo sposta liberamente nell’aula.</li>
         <li><strong>Pressione lunga su un banco</strong> → apre direttamente <em>Aggiungi/modifica cognome</em>.</li>
-        <li><strong>↻ Ruota</strong> → ruota di 90° il banco selezionato. Se hai sbloccato la struttura e selezioni la cattedra, puoi scegliere −45°, −30°, 0°, +30°, +45° o 90°.</li>
+        <li><strong>↻ Ruota</strong> → ruota di 90° il banco selezionato. Se hai sbloccato la struttura e selezioni la cattedra o il monitor, puoi scegliere −45°, −30°, 0°, +30°, +45° o 90°.</li>
         <li><strong>🔒 Struttura / 🔓 Struttura</strong> → blocca o sblocca cattedra, porta, lavagna, monitor e davanzale. Quando è sbloccata puoi trascinare questi elementi.</li>
         <li><strong>↔ Doppia freccia rossa/blu</strong> → indica la <strong>zona della porta d’ingresso</strong>. Questa zona deve essere lasciata sgombra, senza banchi o altri elementi, per consentire il passaggio.</li>
         <li><strong>🪑 Banchi</strong> → la pianta parte con 24 banchi, ma puoi aggiungerne o rimuoverne e impostare un totale da 1 a 30. I nuovi banchi compaiono in una zona libera della pianta, pronti per essere trascinati.</li>
@@ -330,16 +330,16 @@
 </dialog>
 
 <dialog id="teacherRotateDialog">
-  <div class="modal-head"><h2>Ruota cattedra</h2><button class="icon close" aria-label="Chiudi">×</button></div>
+  <div class="modal-head"><h2 id="rotationDialogTitle">Ruota elemento</h2><button class="icon close" aria-label="Chiudi">×</button></div>
   <div class="modal-body">
-    <p class="hint">Scegli l'inclinazione della cattedra rispetto all'orizzontale. Sono disponibili anche le inclinazioni di 30° e 45° in entrambe le direzioni.</p>
+    <p class="hint" id="rotationDialogHint">Scegli l'inclinazione dell'elemento rispetto all'orizzontale.</p>
     <div class="angle-grid">
-      <button data-teacher-angle="-45">−45°</button>
-      <button data-teacher-angle="-30">−30°</button>
-      <button data-teacher-angle="0">0°</button>
-      <button data-teacher-angle="30">+30°</button>
-      <button data-teacher-angle="45">+45°</button>
-      <button data-teacher-angle="90">90°</button>
+      <button data-structure-angle="-45">−45°</button>
+      <button data-structure-angle="-30">−30°</button>
+      <button data-structure-angle="0">0°</button>
+      <button data-structure-angle="30">+30°</button>
+      <button data-structure-angle="45">+45°</button>
+      <button data-structure-angle="90">90°</button>
     </div>
   </div>
   <div class="modal-foot"><button class="close">Chiudi</button></div>
@@ -573,7 +573,7 @@
     }
     const selected=state.desks.find(d=>d.id===state.selectedDesk);
     const selectedStructure=state.structures.find(s=>s.id===state.selectedStructure);
-    const structureLabel=selectedStructure?.kind==='teacher'?'Cattedra selezionata':(selectedStructure?'Elemento struttura selezionato':'Nessun banco selezionato');
+    const structureLabel=selectedStructure?.kind==='teacher'?'Cattedra selezionata':(selectedStructure?.kind==='monitor'?'Monitor selezionato':(selectedStructure?'Elemento struttura selezionato':'Nessun banco selezionato'));
     $('#selectionText').textContent=selected?`Banco ${selected.id}${selected.name?' · '+selected.name:''}`:structureLabel;
     $('#selectedBanner').textContent=selected?`Banco selezionato: ${selected.id}${selected.name?' · '+selected.name:''}`:'Seleziona prima un banco sulla pianta.';
     const assigned=state.desks.filter(d=>d.name).length;
@@ -823,24 +823,30 @@
       return;
     }
     const s=state.structures.find(x=>x.id===state.selectedStructure);
-    if(s?.kind==='teacher'){
+    if(s && (s.kind==='teacher' || s.kind==='monitor')){
       const current=Number(s.rot||0);
-      teacherRotateDialog.querySelectorAll('[data-teacher-angle]').forEach(b=>{
-        b.classList.toggle('active-angle',Number(b.dataset.teacherAngle)===current);
+      const isTeacher=s.kind==='teacher';
+      $('#rotationDialogTitle').textContent=isTeacher?'Ruota cattedra':'Ruota monitor';
+      $('#rotationDialogHint').textContent=isTeacher
+        ? "Scegli l'inclinazione della cattedra rispetto all'orizzontale. Sono disponibili anche le inclinazioni di 30° e 45° in entrambe le direzioni."
+        : "Scegli l'inclinazione del monitor rispetto all'orizzontale. Sono disponibili anche le inclinazioni di 30° e 45° in entrambe le direzioni.";
+      teacherRotateDialog.querySelectorAll('[data-structure-angle]').forEach(b=>{
+        b.classList.toggle('active-angle',Number(b.dataset.structureAngle)===current);
       });
       teacherRotateDialog.showModal();
       return;
     }
-    if(s){toast('La rotazione è disponibile per i banchi e per la cattedra');return;}
-    toast(state.structureLocked?'Seleziona un banco oppure sblocca la Struttura e seleziona la cattedra':'Seleziona un banco o la cattedra da ruotare');
+    if(s){toast('La rotazione è disponibile per i banchi, la cattedra e il monitor');return;}
+    toast(state.structureLocked?'Seleziona un banco oppure sblocca la Struttura e seleziona cattedra o monitor':'Seleziona un banco, la cattedra o il monitor da ruotare');
   };
-  teacherRotateDialog.querySelectorAll('[data-teacher-angle]').forEach(b=>{
+  teacherRotateDialog.querySelectorAll('[data-structure-angle]').forEach(b=>{
     b.onclick=()=>{
       const s=state.structures.find(x=>x.id===state.selectedStructure);
-      if(!s || s.kind!=='teacher'){teacherRotateDialog.close();return;}
-      s.rot=Number(b.dataset.teacherAngle);
+      if(!s || !['teacher','monitor'].includes(s.kind)){teacherRotateDialog.close();return;}
+      s.rot=Number(b.dataset.structureAngle);
+      const label=s.kind==='teacher'?'Cattedra':'Monitor';
       saveAuto();render();teacherRotateDialog.close();
-      toast(s.rot===0?'Cattedra raddrizzata':`Cattedra inclinata di ${s.rot>0?'+':''}${s.rot}°`);
+      toast(s.rot===0?`${label} raddrizzato`:`${label} inclinato di ${s.rot>0?'+':''}${s.rot}°`);
     };
   });
 
