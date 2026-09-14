@@ -58,7 +58,7 @@
   .desk.used:not(.current) rect.main{fill:var(--used)}
   .desk text.num{font-size:10px;fill:#667085;font-weight:700;pointer-events:none}
   body.night .desk text.num{fill:#c8d1cc}
-  .desk .surname{font-size:13px;line-height:1.05;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;height:100%;overflow:hidden;padding:5px;word-break:break-word;pointer-events:none}
+  .desk .surname{font-size:13px;line-height:1;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;height:100%;overflow:hidden;padding:5px;white-space:nowrap;word-break:normal;pointer-events:none}
   /* Evidenziazione estrazioni: contrasto forte anche in Safari/iPadOS. */
   /* In modalità notte i banchi già estratti restano scuri ma con bordo arancione persistente. */
   body.night .desk.used:not(.current) rect.main{fill:#202925;stroke:#ffb347;stroke-width:5}
@@ -518,6 +518,19 @@
     return '';
   }
 
+  const surnameMeasureCanvas=document.createElement('canvas');
+  const surnameMeasureCtx=surnameMeasureCanvas.getContext('2d');
+  function fitSurnameFont(text,boxWidth){
+    const value=String(text||'').trim();
+    if(!value)return 13;
+    const usable=Math.max(10,boxWidth-10);
+    for(let size=13;size>=6;size-=0.5){
+      surnameMeasureCtx.font=`800 ${size}px Inter, Arial, sans-serif`;
+      if(surnameMeasureCtx.measureText(value).width<=usable)return size;
+    }
+    return 6;
+  }
+
   function render(){
     document.body.classList.toggle('night',state.theme==='night');
     $('#themeBtn').textContent=state.theme==='night'?'☀':'☾';
@@ -548,11 +561,14 @@
         : (night && isUsed ? 'style="fill:#202925;stroke:#ffb347;stroke-width:5px"' : '');
       const ring=isCurrent ? `<rect class="extract-ring" x="-4" y="-4" width="${d.w+8}" height="${d.h+8}" rx="7"/>` : '';
       const usedRing=(night && isUsed && !isCurrent) ? `<rect class="used-ring" x="-3" y="-3" width="${d.w+6}" height="${d.h+6}" rx="6" style="stroke:#ffd28a;stroke-width:3px;opacity:.95"/>` : '';
-      const nameStyle=isCurrent ? ' style="color:#17202a"' : '';
+      const surnameBoxWidth=Math.max(10,d.w-10);
+      const surnameFont=fitSurnameFont(d.name||'',surnameBoxWidth);
+      const nameColor=isCurrent ? 'color:#17202a;' : '';
+      const nameStyle=` style="${nameColor}font-size:${surnameFont}px"`;
       const numStyle=isCurrent ? ` style="fill:${night?'#6b4300':'#6b4300'}"` : '';
       g.innerHTML=`${usedRing}${ring}<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2" ${inlineMain}/>
         <text class="num" x="5" y="12"${numStyle}>${d.id}</text>
-        <foreignObject x="5" y="14" width="${Math.max(10,d.w-10)}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname"${nameStyle}>${label}</div></foreignObject>`;
+        <foreignObject x="5" y="14" width="${surnameBoxWidth}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname"${nameStyle}>${label}</div></foreignObject>`;
       desksLayer.appendChild(g);
     }
     const selected=state.desks.find(d=>d.id===state.selectedDesk);
@@ -895,18 +911,13 @@
     if(current)lines.push(current);
     return lines.slice(0,4);
   }
-  function fitDeskLines(ctx,text,w,h){
-    const innerW=Math.max(18,w-12), innerH=Math.max(18,h-18);
-    for(let font=15;font>=8;font--){
+  function fitDeskSingleLine(ctx,text,w){
+    const innerW=Math.max(18,w-12);
+    for(let font=15;font>=6;font-=0.5){
       ctx.font=`800 ${font}px Inter, Arial, sans-serif`;
-      const lines=wrapWords(ctx,text,innerW);
-      const lineHeight=font*1.05;
-      const total=lines.length*lineHeight;
-      if(total<=innerH && lines.every(line=>ctx.measureText(line).width<=innerW+0.5)) return {font,lines,lineHeight};
+      if(ctx.measureText(String(text)).width<=innerW)return font;
     }
-    const font=8; ctx.font=`800 ${font}px Inter, Arial, sans-serif`;
-    const lines=wrapLineByChars(ctx,text,Math.max(18,w-12)).slice(0,4);
-    return {font,lines,lineHeight:font*1.05};
+    return 6;
   }
   function drawDoor(ctx,s){
     ctx.save();
@@ -950,11 +961,10 @@
     const name=(d.name||'').trim();
     if(name){
       const boxX=d.x+5, boxY=d.y+14, boxW=d.w-10, boxH=d.h-19;
-      const fit=fitDeskLines(ctx,name,boxW,boxH);
-      ctx.fillStyle='#17202a'; ctx.font=`800 ${fit.font}px Inter, Arial, sans-serif`;
+      const font=fitDeskSingleLine(ctx,name,boxW);
+      ctx.fillStyle='#17202a'; ctx.font=`800 ${font}px Inter, Arial, sans-serif`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      const startY=boxY + (boxH - fit.lines.length*fit.lineHeight)/2 + fit.lineHeight/2;
-      fit.lines.forEach((line,idx)=>ctx.fillText(line,boxX+boxW/2,startY+idx*fit.lineHeight));
+      ctx.fillText(name,boxX+boxW/2,boxY+boxH/2);
     }
     ctx.restore();
   }
