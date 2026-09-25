@@ -180,6 +180,7 @@
     <button id="rotateBtn" title="Ruota il banco, la cattedra o il monitor selezionato">↻ Ruota</button>
     <button id="lockBtn" title="Blocca o sblocca cattedra, porta, lavagna, monitor e davanzale">🔒 Struttura</button>
     <label title="Allinea automaticamente i banchi quando li avvicini"><input id="snapToggle" type="checkbox" checked> magnete</label>
+    <label title="Mostra o nasconde i numeri dei banchi"><input id="numbersToggle" type="checkbox" checked> numeri</label>
     <button id="saveBtn">💾 Salva</button>
     <button id="loadBtn">📂 Carica</button>
     <button id="exportOpenBtn" class="soft" title="Esporta la pianta in PNG o PDF">🖼 Esporta</button>
@@ -230,6 +231,7 @@
         <li><strong>↔ Doppia freccia rossa/blu</strong> → indica la <strong>zona della porta d’ingresso</strong>. Questa zona deve essere lasciata sgombra, senza banchi o altri elementi, per consentire il passaggio.</li>
         <li><strong>🪑 Banchi</strong> → la pianta parte con 24 banchi, ma puoi aggiungerne o rimuoverne e impostare un totale da 1 a 30. I nuovi banchi compaiono in una zona libera della pianta, pronti per essere trascinati.</li>
         <li><strong>magnete</strong> → se attivo, aiuta ad allineare e accostare i banchi.</li>
+        <li><strong>numeri</strong> → mostra o nasconde la numerazione dei banchi. La scelta viene ricordata anche alla riapertura dell’app e viene rispettata nelle esportazioni PNG/PDF.</li>
       </ul>
     </div>
 
@@ -428,6 +430,7 @@
     structures:structuredClone(initialStructures),
     names:[], selectedDesk:null, selectedStructure:null,
     structureLocked:true, used:[], current:null, swapFirst:null, swapMode:false,
+    showNumbers:localStorage.getItem('desk-show-numbers') !== 'false',
     theme:localStorage.getItem('desk-theme') || 'day'
   };
 
@@ -536,6 +539,7 @@
     $('#themeBtn').textContent=state.theme==='night'?'☀':'☾';
     $('#lockBtn').textContent=state.structureLocked?'🔒 Struttura':'🔓 Struttura';
     $('#lockBtn').classList.toggle('active',!state.structureLocked);
+    $('#numbersToggle').checked=state.showNumbers;
 
     structuresLayer.innerHTML='';
     for(const s of state.structures){
@@ -566,9 +570,12 @@
       const nameColor=isCurrent ? 'color:#17202a;' : '';
       const nameStyle=` style="${nameColor}font-size:${surnameFont}px"`;
       const numStyle=isCurrent ? ` style="fill:${night?'#6b4300':'#6b4300'}"` : '';
+      const numMarkup=state.showNumbers ? `<text class="num" x="5" y="12"${numStyle}>${d.id}</text>` : '';
+      const surnameY=state.showNumbers ? 14 : 5;
+      const surnameH=state.showNumbers ? Math.max(10,d.h-19) : Math.max(10,d.h-10);
       g.innerHTML=`${usedRing}${ring}<rect class="main" x="0" y="0" width="${d.w}" height="${d.h}" rx="2" ${inlineMain}/>
-        <text class="num" x="5" y="12"${numStyle}>${d.id}</text>
-        <foreignObject x="5" y="14" width="${surnameBoxWidth}" height="${Math.max(10,d.h-19)}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname"${nameStyle}>${label}</div></foreignObject>`;
+        ${numMarkup}
+        <foreignObject x="5" y="${surnameY}" width="${surnameBoxWidth}" height="${surnameH}"><div xmlns="http://www.w3.org/1999/xhtml" class="surname"${nameStyle}>${label}</div></foreignObject>`;
       desksLayer.appendChild(g);
     }
     const selected=state.desks.find(d=>d.id===state.selectedDesk);
@@ -962,11 +969,13 @@
     roundRect(ctx,d.x,d.y,d.w,d.h,2);
     ctx.fillStyle='#fffdf7'; ctx.fill();
     ctx.lineWidth=2; ctx.strokeStyle='#16832b'; ctx.stroke();
-    ctx.fillStyle='#667085'; ctx.font='700 10px Inter, Arial, sans-serif';
-    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(String(d.id),d.x+5,d.y+4);
+    if(state.showNumbers){
+      ctx.fillStyle='#667085'; ctx.font='700 10px Inter, Arial, sans-serif';
+      ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(String(d.id),d.x+5,d.y+4);
+    }
     const name=(d.name||'').trim();
     if(name){
-      const boxX=d.x+5, boxY=d.y+14, boxW=d.w-10, boxH=d.h-19;
+      const boxX=d.x+5, boxY=state.showNumbers?d.y+14:d.y+5, boxW=d.w-10, boxH=state.showNumbers?d.h-19:d.h-10;
       const font=fitDeskSingleLine(ctx,name,boxW);
       ctx.fillStyle='#17202a'; ctx.font=`800 ${font}px Inter, Arial, sans-serif`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -1106,6 +1115,13 @@
   };
 
   $('#themeBtn').onclick=()=>{state.theme=state.theme==='day'?'night':'day';localStorage.setItem('desk-theme',state.theme);render()};
+
+  $('#numbersToggle').addEventListener('change',e=>{
+    state.showNumbers=e.target.checked;
+    localStorage.setItem('desk-show-numbers',String(state.showNumbers));
+    render();
+    toast(state.showNumbers?'Numeri dei banchi visibili':'Numeri dei banchi nascosti');
+  });
 
   // Piccolo ding dedicato all'attivazione/disattivazione del magnete.
   $('#snapToggle').addEventListener('change',e=>{
